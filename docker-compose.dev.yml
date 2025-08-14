@@ -39,6 +39,7 @@ services:
     volumes:
       - .:/app
       - ./logs:/app/logs
+      - ./staticfiles:/app/staticfiles
     ports:
       - "${WEB_PORT:-8000}:8000"
     env_file:

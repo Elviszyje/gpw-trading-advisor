@@ -9,6 +9,11 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}🚀 Starting GPW Trading Advisor${NC}"
 
+# Create necessary directories with proper permissions
+echo -e "${YELLOW}📁 Creating necessary directories...${NC}"
+mkdir -p /app/logs /app/staticfiles /app/media
+chmod 755 /app/logs /app/staticfiles /app/media
+
 # Wait for PostgreSQL
 echo -e "${YELLOW}⏳ Waiting for PostgreSQL...${NC}"
 until pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT:-5432} -U ${DATABASE_USER}; do

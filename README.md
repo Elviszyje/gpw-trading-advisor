@@ -90,6 +90,32 @@ make create-superuser
 - **API Documentation**: http://localhost:8000/api/docs/
 - **Health Check**: http://localhost:8000/health/
 
+### 6. Konfiguracja portów
+
+Domyślne porty można zmienić poprzez zmienne środowiskowe w pliku `.env`:
+
+```bash
+# Port dla aplikacji web (default: 8000)
+WEB_PORT=8000
+
+# Port dla bazy danych PostgreSQL (default: 5432 dla produkcji, 5433 dla development)
+DB_PORT=5433
+
+# Port dla Redis (default: 6379 dla produkcji, 6380 dla development)
+REDIS_PORT=6380
+```
+
+Przykład uruchomienia na innym porcie:
+```bash
+# Zmień port w pliku .env
+echo "WEB_PORT=9000" >> .env
+
+# Uruchom aplikację
+docker-compose -f docker-compose.dev.yml up --build
+
+# Aplikacja będzie dostępna na http://localhost:9000
+```
+
 ## 🔧 Development
 
 ### Struktura projektu

@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: gpw_user
       POSTGRES_PASSWORD: gpw_password
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U gpw_user -d gpw_advisor_db"]
       interval: 10s
@@ -22,7 +22,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6380}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -40,7 +40,9 @@ services:
       - .:/app
       - ./logs:/app/logs
     ports:
-      - "8000:8000"
+      - "${WEB_PORT:-8000}:8000"
+    env_file:
+      - .env
     environment:
       - DEBUG=True
       - DB_HOST=db

@@ -230,61 +230,116 @@ RETRY_DELAY_SECONDS = config('RETRY_DELAY_SECONDS', default=30, cast=int)
 # ]
 
 # Logging Configuration
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+# Ensure logs directory exists
+import os
+LOGS_DIR = BASE_DIR / 'logs'
+os.makedirs(LOGS_DIR, exist_ok=True)
+
+# Use console logging in Docker environment, file logging in development
+USE_FILE_LOGGING = config('USE_FILE_LOGGING', default=False, cast=bool)
+
+if USE_FILE_LOGGING:
+    # File-based logging for development
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+        'handlers': {
+            'file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': LOGS_DIR / 'gpw_advisor.log',
+                'formatter': 'verbose',
+            },
+            'ml_file': {
+                'level': 'INFO',
+                'class': 'logging.FileHandler',
+                'filename': LOGS_DIR / 'ml_system.log',
+                'formatter': 'verbose',
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple',
+            },
         },
-    },
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'gpw_advisor.log',
-            'formatter': 'verbose',
+        'loggers': {
+            'gpw_advisor': {
+                'handlers': ['file', 'console'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'apps': {
+                'handlers': ['file', 'console'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'apps.analysis.ml_models': {
+                'handlers': ['ml_file', 'console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'apps.analysis.ml_views': {
+                'handlers': ['ml_file', 'console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
         },
-        'ml_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'ml_system.log',
-            'formatter': 'verbose',
+    }
+else:
+    # Console-only logging for Docker/production
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+                'style': '{',
+            },
+            'simple': {
+                'format': '{levelname} {message}',
+                'style': '{',
+            },
         },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
         },
-    },
-    'loggers': {
-        'gpw_advisor': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
+        'loggers': {
+            'gpw_advisor': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'apps': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': True,
+            },
+            'apps.analysis.ml_models': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'apps.analysis.ml_views': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
         },
-        'apps': {
-            'handlers': ['file', 'console'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'apps.analysis.ml_models': {
-            'handlers': ['ml_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        'apps.analysis.ml_views': {
-            'handlers': ['ml_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-    },
-}
+    }
 
 # Login/Logout URLs
 LOGIN_URL = '/users/login/'

@@ -18,8 +18,15 @@ import logging
 import os
 import psutil
 import platform
-import torch
 from pathlib import Path
+
+# Try to import torch, but make it optional for deployment
+try:
+    import torch
+    HAS_TORCH = True
+except ImportError:
+    torch = None
+    HAS_TORCH = False
 
 from rest_framework.views import APIView
 from rest_framework.response import Response

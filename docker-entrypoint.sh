@@ -9,10 +9,16 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}🚀 Starting GPW Trading Advisor${NC}"
 
-# Create necessary directories with proper permissions
-echo -e "${YELLOW}📁 Creating necessary directories...${NC}"
-mkdir -p /app/logs /app/staticfiles /app/media
-chmod 755 /app/logs /app/staticfiles /app/media
+# Ensure necessary directories exist and have proper permissions
+echo -e "${YELLOW}📁 Checking directory permissions...${NC}"
+for dir in /app/logs /app/staticfiles /app/media; do
+    if [ ! -d "$dir" ]; then
+        echo -e "${YELLOW}Creating directory: $dir${NC}"
+        mkdir -p "$dir" 2>/dev/null || echo -e "${YELLOW}Directory $dir already exists or permission handled by volume mount${NC}"
+    fi
+    # Try to set permissions, but don't fail if we can't (volume mounts)
+    chmod 755 "$dir" 2>/dev/null || echo -e "${YELLOW}Permissions for $dir handled by volume mount${NC}"
+done
 
 # Wait for PostgreSQL
 echo -e "${YELLOW}⏳ Waiting for PostgreSQL...${NC}"

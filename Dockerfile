@@ -51,15 +51,18 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy project
 COPY . /app/
 
-# Create necessary directories and set permissions
+# Create necessary directories and set permissions BEFORE switching user
 RUN mkdir -p /app/logs /app/staticfiles /app/media \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && chmod -R 755 /app/logs /app/staticfiles /app/media
+
+# Copy entrypoint script and set permissions as root
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh \
+    && chown appuser:appuser /app/docker-entrypoint.sh
 
 # Switch to non-root user
 USER appuser
-
-# Collect static files (will be done in entrypoint)
-# RUN python manage.py collectstatic --noinput || true
 
 # Expose port
 EXPOSE 8000
@@ -67,10 +70,6 @@ EXPOSE 8000
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
-
-# Copy entrypoint script
-COPY --chown=appuser:appuser docker-entrypoint.sh /app/
-RUN chmod +x /app/docker-entrypoint.sh
 
 # Use entrypoint script
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

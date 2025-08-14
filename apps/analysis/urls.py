@@ -3,36 +3,21 @@ URL configuration for AI Analysis app.
 """
 
 from django.urls import path
-from . import views, ml_views, recommendation_views, time_weight_views
+from . import views, recommendation_views, time_weight_views
+
+# Conditionally import ML views if torch is available
+try:
+    from . import ml_views
+    ML_VIEWS_AVAILABLE = True
+except ImportError:
+    ML_VIEWS_AVAILABLE = False
 
 app_name = 'analysis'
 
-urlpatterns = [
+# Base URL patterns that don't require ML dependencies
+base_urlpatterns = [
     # AI Dashboard
     path('ai/', views.ai_dashboard, name='ai_dashboard'),
-    
-    # ML Dashboard and Training
-    path('ml/', ml_views.ml_dashboard, name='ml_dashboard'),
-    path('ml-test/', ml_views.ml_test, name='ml_test'),
-    path('ml-config/', ml_views.ml_config, name='ml_config'),
-    path('ml-monitoring/', ml_views.ml_monitoring, name='ml_monitoring'),
-    path('ml-docs/', ml_views.ml_docs, name='ml_docs'),
-    path('ml/train/', ml_views.train_models, name='train_models'),
-    path('ml/feedback/', ml_views.submit_feedback, name='ml_feedback'),
-    path('ml/predictions/', ml_views.ml_predictions, name='ml_predictions'),
-    path('ml/performance/', ml_views.model_performance, name='model_performance'),
-    
-    # ML API endpoints
-    path('api/ml/predict/', ml_views.GetPredictionView.as_view(), name='api_ml_predict'),
-    path('api/ml/logs/', ml_views.api_ml_logs, name='api_ml_logs'),
-    path('api/ml/processes/', ml_views.api_ml_processes, name='api_ml_processes'),
-    path('api/ml/train/', ml_views.api_ml_train, name='api_ml_train'),
-    path('api/ml/training-status/', ml_views.api_ml_training_status, name='api_ml_training_status'),
-    path('api/ml/config/', ml_views.api_ml_config, name='api_ml_config'),
-    path('api/ml/quick-predict/', ml_views.api_ml_quick_predict, name='api_ml_quick_predict'),
-    path('api/ml/reset/', ml_views.api_ml_reset, name='api_ml_reset'),
-    path('api/ml/system-resources/', ml_views.api_ml_system_resources, name='api_ml_system_resources'),
-    path('api/detect-anomalies/', ml_views.api_detect_anomalies, name='api_detect_anomalies'),
     
     # Recommendation Performance Analysis
     path('recommendations/', recommendation_views.recommendation_dashboard, name='recommendation_dashboard'),
@@ -50,9 +35,8 @@ urlpatterns = [
     # Pattern Detection
     path('patterns/', views.pattern_detection, name='pattern_detection'),
     
-    # Stock-specific AI analysis
+    # Stock-specific AI analysis (basic)
     path('stock/<str:symbol>/ai/', views.stock_ai_analysis, name='stock_ai_analysis'),
-    path('stock/<str:symbol>/predict/', ml_views.generate_ml_prediction, name='generate_ml_prediction'),
     
     # Time-Weighted News Analysis Configuration
     path('time-weight-config/', time_weight_views.time_weight_config_dashboard, name='time_weight_dashboard'),
@@ -71,3 +55,38 @@ urlpatterns = [
     path('api/patterns/', views.ai_api_patterns, name='api_patterns'),
     path('api/stats/', views.ai_api_stats, name='api_stats'),
 ]
+
+# ML-specific URL patterns (only available when torch is installed)
+ml_urlpatterns = []
+
+if ML_VIEWS_AVAILABLE:
+    ml_urlpatterns = [
+        # ML Dashboard and Training
+        path('ml/', ml_views.ml_dashboard, name='ml_dashboard'),
+        path('ml-test/', ml_views.ml_test, name='ml_test'),
+        path('ml-config/', ml_views.ml_config, name='ml_config'),
+        path('ml-monitoring/', ml_views.ml_monitoring, name='ml_monitoring'),
+        path('ml-docs/', ml_views.ml_docs, name='ml_docs'),
+        path('ml/train/', ml_views.train_models, name='train_models'),
+        path('ml/feedback/', ml_views.submit_feedback, name='ml_feedback'),
+        path('ml/predictions/', ml_views.ml_predictions, name='ml_predictions'),
+        path('ml/performance/', ml_views.model_performance, name='model_performance'),
+        
+        # ML API endpoints
+        path('api/ml/predict/', ml_views.GetPredictionView.as_view(), name='api_ml_predict'),
+        path('api/ml/logs/', ml_views.api_ml_logs, name='api_ml_logs'),
+        path('api/ml/processes/', ml_views.api_ml_processes, name='api_ml_processes'),
+        path('api/ml/train/', ml_views.api_ml_train, name='api_ml_train'),
+        path('api/ml/training-status/', ml_views.api_ml_training_status, name='api_ml_training_status'),
+        path('api/ml/config/', ml_views.api_ml_config, name='api_ml_config'),
+        path('api/ml/quick-predict/', ml_views.api_ml_quick_predict, name='api_ml_quick_predict'),
+        path('api/ml/reset/', ml_views.api_ml_reset, name='api_ml_reset'),
+        path('api/ml/system-resources/', ml_views.api_ml_system_resources, name='api_ml_system_resources'),
+        path('api/detect-anomalies/', ml_views.api_detect_anomalies, name='api_detect_anomalies'),
+        
+        # Stock-specific ML prediction
+        path('stock/<str:symbol>/predict/', ml_views.generate_ml_prediction, name='generate_ml_prediction'),
+    ]
+
+# Combine all URL patterns
+urlpatterns = base_urlpatterns + ml_urlpatterns

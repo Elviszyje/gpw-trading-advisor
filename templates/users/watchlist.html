@@ -1,0 +1,661 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Obserwowane spółki - GPW Trading Advisor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .watchlist-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .market-summary-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #28a745;
+    }
+    
+    .stock-table {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .stock-row {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+    }
+    
+    .stock-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .price-up { 
+        color: #28a745; 
+        font-weight: bold;
+    }
+    
+    .price-down { 
+        color: #dc3545; 
+        font-weight: bold;
+    }
+    
+    .price-neutral { 
+        color: #6c757d; 
+        font-weight: bold;
+    }
+    
+    .change-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+    }
+    
+    .volume-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .volume-high { background-color: #dc3545; }
+    .volume-normal { background-color: #28a745; }
+    .volume-low { background-color: #ffc107; }
+    
+    .last-update {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .stats-box {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+        line-height: 1;
+    }
+    
+    .empty-watchlist {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .auto-refresh-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #28a745;
+        animation: pulse 2s infinite;
+        margin-right: 5px;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .refresh-btn {
+        transition: all 0.2s ease;
+    }
+    
+    .refresh-btn:hover {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="watchlist-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h3><i class="fas fa-eye me-2"></i>Obserwowane spółki</h3>
+            <p class="mb-0">Monitoruj najważniejsze spółki z GPW w czasie rzeczywistym</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <i class="fas fa-chart-area fa-4x opacity-25"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Market Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-box">
+            <div class="stats-number">{{ market_summary.total_monitored }}</div>
+            <small class="text-muted">Obserwowane</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box" style="border-left-color: #28a745;">
+            <div class="stats-number" style="color: #28a745;">{{ market_summary.gainers }}</div>
+            <small class="text-muted">Rosnące</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box" style="border-left-color: #dc3545;">
+            <div class="stats-number" style="color: #dc3545;">{{ market_summary.losers }}</div>
+            <small class="text-muted">Spadające</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-box" style="border-left-color: #6f42c1;">
+            <div class="stats-number" style="color: #6f42c1;">{{ market_summary.active_today }}</div>
+            <small class="text-muted">Aktywne dziś</small>
+        </div>
+    </div>
+</div>
+
+<!-- Watchlist Table -->
+<div class="card stock-table">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>
+                    Lista obserwowanych spółek
+                </h5>
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-outline-primary btn-sm me-2 refresh-btn" onclick="manualRefresh()" title="Odśwież dane teraz">
+                    <i class="fas fa-sync-alt"></i> Odśwież
+                </button>
+                <small class="text-muted">
+                    Aktualizacja: {{ current_time|date:"d.m.Y H:i:s" }}
+                    <br>
+                    <small class="text-success">
+                        <span class="auto-refresh-indicator"></span>Auto-odświeżanie: co 30s
+                    </small>
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        {% if watchlist_data %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="18%">Spółka</th>
+                            <th width="13%" class="text-end">Kurs aktualny</th>
+                            <th width="13%" class="text-end">Zmiana (PLN)</th>
+                            <th width="13%" class="text-end">Zmiana (%)</th>
+                            <th width="13%" class="text-end">Wolumen</th>
+                            <th width="18%" class="text-end">Ostatnia aktualizacja</th>
+                            <th width="12%" class="text-center">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in watchlist_data %}
+                        <tr class="stock-row" data-symbol="{{ item.stock.symbol }}">
+                            <td onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                <strong>{{ item.stock.symbol }}</strong>
+                                <br>
+                                <small class="text-muted">{{ item.stock.name|truncatechars:40 }}</small>
+                                {% if item.stock.sector %}
+                                    <br><small class="badge bg-light text-dark">{{ item.stock.sector }}</small>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end" onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                {% if item.current_price %}
+                                    <span class="h5 {% if item.daily_change > 0 %}price-up{% elif item.daily_change < 0 %}price-down{% else %}price-neutral{% endif %}">
+                                        {{ item.current_price|floatformat:2 }} PLN
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end" onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                {% if item.daily_change %}
+                                    <span class="change-badge {% if item.daily_change > 0 %}bg-success text-white{% elif item.daily_change < 0 %}bg-danger text-white{% else %}bg-secondary text-white{% endif %}">
+                                        {% if item.daily_change > 0 %}+{% endif %}{{ item.daily_change|floatformat:2 }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end" onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                {% if item.daily_change_percent %}
+                                    <span class="change-badge {% if item.daily_change_percent > 0 %}bg-success text-white{% elif item.daily_change_percent < 0 %}bg-danger text-white{% else %}bg-secondary text-white{% endif %}">
+                                        {% if item.daily_change_percent > 0 %}+{% endif %}{{ item.daily_change_percent|floatformat:2 }}%
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end" onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                {% if item.volume %}
+                                    <div>
+                                        {% if item.volume_change %}
+                                            <span class="volume-indicator volume-{{ item.volume_change }}"></span>
+                                        {% endif %}
+                                        <strong>{{ item.volume|floatformat:0 }}</strong>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end" onclick="window.location.href='/users/management/companies/{{ item.stock.symbol }}/';" style="cursor: pointer;">
+                                {% if item.last_update %}
+                                    <div>
+                                        <strong>{{ item.last_update|date:"H:i:s" }}</strong>
+                                        <br>
+                                        <small class="last-update">{{ item.last_update|date:"d.m.Y" }}</small>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Brak danych</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button class="btn btn-outline-primary" 
+                                            onclick="event.stopPropagation(); window.location.href='/users/management/companies/{{ item.stock.symbol }}/';"
+                                            title="Szczegóły spółki">
+                                        <i class="fas fa-chart-line"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" 
+                                            onclick="event.stopPropagation(); removeFromWatchlist('{{ item.stock.symbol }}');"
+                                            title="Usuń z obserwowanych">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-watchlist">
+                <i class="fas fa-eye-slash fa-4x mb-3"></i>
+                <h5>Brak obserwowanych spółek</h5>
+                <p class="text-muted">Aby dodać spółki do obserwowanych, przejdź do sekcji <strong>Zarządzanie → Spółki</strong> i zaznacz interesujące Cię spółki.</p>
+                <a href="/users/management/companies/" class="btn btn-primary">
+                    <i class="fas fa-building me-2"></i>
+                    Zarządzaj spółkami
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Information Panel -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle me-2"></i>Informacje o wskaźnikach</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Wskaźniki wolumenu:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><span class="volume-indicator volume-high"></span> Wysoki wolumen (ponad 150% średniej)</li>
+                        <li><span class="volume-indicator volume-normal"></span> Normalny wolumen</li>
+                        <li><span class="volume-indicator volume-low"></span> Niski wolumen (poniżej 50% średniej)</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong>Aktualizacja danych:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Dane aktualizowane w czasie rzeczywistym</li>
+                        <li>Kliknij na spółkę aby zobaczyć szczegóły</li>
+                        <li>Wolumen porównywany ze średnią z ostatniego tygodnia</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let autoRefreshInterval;
+    let lastUpdateTime = null;
+    
+    // Initialize auto-refresh on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        startAutoRefresh();
+    });
+    
+    // Start auto-refresh every 30 seconds
+    function startAutoRefresh() {
+        // Clear any existing interval
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        
+        // Set up new interval for 30 seconds
+        autoRefreshInterval = setInterval(function() {
+            refreshWatchlistData();
+        }, 30000); // 30 seconds
+        
+        console.log('Auto-refresh started - updating every 30 seconds');
+    }
+    
+    // Stop auto-refresh (useful for debugging or when user is inactive)
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+            console.log('Auto-refresh stopped');
+        }
+    }
+    
+    // Fetch fresh watchlist data via AJAX
+    function refreshWatchlistData() {
+        fetch('/users/api/watchlist-data/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateWatchlistTable(data.watchlist_data, data.market_summary, data.current_time_formatted);
+                console.log('Watchlist data refreshed successfully');
+            } else {
+                console.error('Error refreshing watchlist data:', data.error);
+                showNotification('Błąd podczas odświeżania danych: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Network error refreshing watchlist data:', error);
+            showNotification('Błąd połączenia podczas odświeżania danych', 'error');
+        });
+    }
+    
+    // Update the watchlist table with fresh data
+    function updateWatchlistTable(watchlistData, marketSummary, currentTime) {
+        // Update market summary
+        updateMarketSummaryStats(marketSummary);
+        
+        // Update timestamp in header
+        const timestampElement = document.querySelector('.card-header small.text-muted');
+        if (timestampElement) {
+            timestampElement.textContent = `Aktualizacja: ${currentTime}`;
+        }
+        
+        // Update table rows
+        const tbody = document.querySelector('.stock-table tbody');
+        if (tbody && watchlistData.length > 0) {
+            let newHtml = '';
+            
+            watchlistData.forEach(item => {
+                newHtml += buildTableRow(item);
+            });
+            
+            tbody.innerHTML = newHtml;
+            
+            // Re-attach event listeners for new elements
+            attachRowEventListeners();
+        } else if (tbody && watchlistData.length === 0) {
+            // Show empty state
+            showEmptyWatchlistState();
+        }
+        
+        // Update browser title to show refresh status
+        const originalTitle = document.title;
+        document.title = '🔄 ' + originalTitle;
+        setTimeout(() => {
+            document.title = originalTitle;
+        }, 2000);
+    }
+    
+    // Build HTML for a single table row
+    function buildTableRow(item) {
+        const priceClass = item.daily_change > 0 ? 'price-up' : item.daily_change < 0 ? 'price-down' : 'price-neutral';
+        const changeClass = item.daily_change > 0 ? 'bg-success text-white' : item.daily_change < 0 ? 'bg-danger text-white' : 'bg-secondary text-white';
+        const changeSign = item.daily_change > 0 ? '+' : '';
+        const percentSign = item.daily_change_percent > 0 ? '+' : '';
+        
+        return `
+            <tr class="stock-row" data-symbol="${item.symbol}">
+                <td onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    <strong>${item.symbol}</strong>
+                    <br>
+                    <small class="text-muted">${item.name ? item.name.substring(0, 40) : ''}</small>
+                    ${item.sector ? `<br><small class="badge bg-light text-dark">${item.sector}</small>` : ''}
+                </td>
+                
+                <td class="text-end" onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    ${item.current_price ? 
+                        `<span class="h5 ${priceClass}">${parseFloat(item.current_price).toFixed(2)} PLN</span>` : 
+                        '<span class="text-muted">-</span>'
+                    }
+                </td>
+                
+                <td class="text-end" onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    ${item.daily_change ? 
+                        `<span class="change-badge ${changeClass}">${changeSign}${parseFloat(item.daily_change).toFixed(2)}</span>` : 
+                        '<span class="text-muted">-</span>'
+                    }
+                </td>
+                
+                <td class="text-end" onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    ${item.daily_change_percent ? 
+                        `<span class="change-badge ${changeClass}">${percentSign}${parseFloat(item.daily_change_percent).toFixed(2)}%</span>` : 
+                        '<span class="text-muted">-</span>'
+                    }
+                </td>
+                
+                <td class="text-end" onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    ${item.volume ? 
+                        `<div>
+                            ${item.volume_change ? `<span class="volume-indicator volume-${item.volume_change}"></span>` : ''}
+                            <strong>${parseInt(item.volume).toLocaleString()}</strong>
+                        </div>` : 
+                        '<span class="text-muted">-</span>'
+                    }
+                </td>
+                
+                <td class="text-end" onclick="window.location.href='/users/management/companies/${item.symbol}/';" style="cursor: pointer;">
+                    ${item.last_update_formatted ? 
+                        `<div>
+                            <strong>${item.last_update_formatted}</strong>
+                            <br>
+                            <small class="last-update">${item.last_update_date_formatted}</small>
+                        </div>` : 
+                        '<span class="text-muted">Brak danych</span>'
+                    }
+                </td>
+                
+                <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button class="btn btn-outline-primary" 
+                                onclick="event.stopPropagation(); window.location.href='/users/management/companies/${item.symbol}/';"
+                                title="Szczegóły spółki">
+                            <i class="fas fa-chart-line"></i>
+                        </button>
+                        <button class="btn btn-outline-danger" 
+                                onclick="event.stopPropagation(); removeFromWatchlist('${item.symbol}');"
+                                title="Usuń z obserwowanych">
+                            <i class="fas fa-eye-slash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+    
+    // Update market summary statistics
+    function updateMarketSummaryStats(marketSummary) {
+        const statsBoxes = document.querySelectorAll('.stats-number');
+        if (statsBoxes.length >= 4) {
+            statsBoxes[0].textContent = marketSummary.total_monitored;
+            statsBoxes[1].textContent = marketSummary.gainers;
+            statsBoxes[2].textContent = marketSummary.losers;
+            statsBoxes[3].textContent = marketSummary.active_today;
+        }
+    }
+    
+    // Re-attach event listeners to new table rows
+    function attachRowEventListeners() {
+        document.querySelectorAll('.stock-row').forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.001)';
+                this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+            });
+            
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = 'none';
+            });
+        });
+    }
+    
+    // Show empty watchlist state
+    function showEmptyWatchlistState() {
+        const cardBody = document.querySelector('.stock-table .card-body');
+        if (cardBody) {
+            cardBody.innerHTML = `
+                <div class="empty-watchlist">
+                    <i class="fas fa-eye-slash fa-4x mb-3"></i>
+                    <h5>Brak obserwowanych spółek</h5>
+                    <p class="text-muted">Aby dodać spółki do obserwowanych, przejdź do sekcji <strong>Zarządzanie → Spółki</strong> i zaznacz interesujące Cię spółki.</p>
+                    <a href="/users/management/companies/" class="btn btn-primary">
+                        <i class="fas fa-building me-2"></i>
+                        Zarządzaj spółkami
+                    </a>
+                </div>
+            `;
+        }
+    }
+    
+    // Manual refresh button (optional)
+    function manualRefresh() {
+        showNotification('Odświeżanie danych...', 'info');
+        refreshWatchlistData();
+    }
+    
+    // Attach initial event listeners
+    attachRowEventListeners();
+    
+    // Function to remove stock from watchlist
+    function removeFromWatchlist(symbol) {
+        if (confirm(`Czy na pewno chcesz usunąć spółkę ${symbol} z obserwowanych?`)) {
+            fetch(`/users/api/toggle-stock-monitoring/${symbol}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showNotification(data.message, 'success');
+                    
+                    // Remove the row from table with animation
+                    const row = document.querySelector(`tr[data-symbol="${symbol}"]`);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(-100%)';
+                        setTimeout(() => {
+                            row.remove();
+                            // Refresh data to update market summary
+                            refreshWatchlistData();
+                        }, 300);
+                    } else {
+                        // If no data-symbol attribute, refresh data
+                        setTimeout(() => refreshWatchlistData(), 1000);
+                    }
+                } else {
+                    showNotification(data.error || 'Wystąpił błąd', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Wystąpił błąd podczas usuwania spółki', 'error');
+                console.error('Error:', error);
+            });
+        }
+    }
+    
+    // Function to show notifications
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} alert-dismissible fade show`;
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.zIndex = '9999';
+        notification.style.minWidth = '300px';
+        
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+    }
+    
+    // Function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Stop auto-refresh when user leaves the page
+    window.addEventListener('beforeunload', function() {
+        stopAutoRefresh();
+    });
+    
+    // Resume auto-refresh when user returns to the page
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    });
+</script>
+{% endblock %}

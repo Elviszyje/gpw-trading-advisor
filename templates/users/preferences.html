@@ -1,0 +1,320 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Preferencje użytkownika{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preference-section {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .preference-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .preference-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+        color: #007bff;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    
+    .form-control {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px;
+        transition: border-color 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+    
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+        background-color: #007bff;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    
+    .btn-primary {
+        background: #007bff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-primary:hover {
+        background: #0056b3;
+    }
+    
+    .alert {
+        border: none;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-cog text-primary me-2"></i>
+                    Preferencje użytkownika
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Preferencje</li>
+                    </ol>
+                </nav>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Dane osobowe -->
+                <div class="preference-section">
+                    <div class="preference-header">
+                        <i class="fas fa-user preference-icon"></i>
+                        <h4 class="mb-0">Dane osobowe</h4>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">{{ form.first_name.label_tag }}</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">{{ form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">{{ form.last_name.label_tag }}</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">{{ form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">{{ form.email.label_tag }}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Preferencje notyfikacji -->
+                <div class="preference-section">
+                    <div class="preference-header">
+                        <i class="fas fa-bell preference-icon"></i>
+                        <h4 class="mb-0">Powiadomienia</h4>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-0">Powiadomienia email</label>
+                                    <label class="switch">
+                                        <input type="checkbox" {% if form.email_notifications.value %}checked{% endif %} 
+                                               name="{{ form.email_notifications.name }}">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Otrzymuj powiadomienia o ważnych wydarzeniach</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-0">Alerty cenowe</label>
+                                    <label class="switch">
+                                        <input type="checkbox" {% if form.price_alerts.value %}checked{% endif %}
+                                               name="{{ form.price_alerts.name }}">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Powiadomienia o zmianach cen akcji</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preferencje danych -->
+                <div class="preference-section">
+                    <div class="preference-header">
+                        <i class="fas fa-chart-line preference-icon"></i>
+                        <h4 class="mb-0">Wyświetlanie danych</h4>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">{{ form.default_chart_period.label_tag }}</label>
+                                {{ form.default_chart_period }}
+                                {% if form.default_chart_period.errors %}
+                                    <div class="text-danger small">{{ form.default_chart_period.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">{{ form.items_per_page.label_tag }}</label>
+                                {{ form.items_per_page }}
+                                {% if form.items_per_page.errors %}
+                                    <div class="text-danger small">{{ form.items_per_page.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bezpieczeństwo -->
+                <div class="preference-section">
+                    <div class="preference-header">
+                        <i class="fas fa-shield-alt preference-icon"></i>
+                        <h4 class="mb-0">Bezpieczeństwo</h4>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-0">Dwuskładnikowe uwierzytelnianie</label>
+                                    <label class="switch">
+                                        <input type="checkbox" {% if form.two_factor_enabled.value %}checked{% endif %}
+                                               name="{{ form.two_factor_enabled.name }}">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Dodatkowa ochrona konta</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <label class="form-label mb-0">Automatyczne wylogowanie</label>
+                                    <label class="switch">
+                                        <input type="checkbox" {% if form.auto_logout.value %}checked{% endif %}
+                                               name="{{ form.auto_logout.name }}">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Wyloguj po okresie nieaktywności</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <a href="{% url 'users:change_password' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-key me-2"></i>
+                            Zmień hasło
+                        </a>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-3">
+                    <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>
+                        Anuluj
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        Zapisz preferencje
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Dodaj interaktywność do switchy
+    document.querySelectorAll('.switch input').forEach(function(switchEl) {
+        switchEl.addEventListener('change', function() {
+            // Można dodać tutaj dodatkowe akcje po zmianie ustawienia
+            console.log('Setting changed:', this.name, this.checked);
+        });
+    });
+</script>
+{% endblock %}

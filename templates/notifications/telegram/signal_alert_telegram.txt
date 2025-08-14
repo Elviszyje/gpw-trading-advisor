@@ -1,0 +1,17 @@
+🎯 Trading Signal Alert
+
+{{ stock_symbol }} - {{ signal_type|upper }}
+
+📊 Signal Details:
+• Type: {{ signal_type|upper }}
+• Confidence: {{ confidence }}%
+• Price: {{ price_at_signal }} PLN
+{% if target_price != 'N/A' %}• Target: {{ target_price }} PLN{% endif %}
+{% if stop_loss_price != 'N/A' %}• Stop Loss: {{ stop_loss_price }} PLN{% endif %}
+• Time: {{ timestamp|date:"H:i" }}
+
+{% if signal_type == 'buy' %}📈 BUY Signal - Consider purchasing shares{% elif signal_type == 'sell' %}📉 SELL Signal - Consider selling position{% else %}⏸️ {{ signal_type|upper }} - Monitor for developments{% endif %}
+
+⚠️ Disclaimer: This is automated technical analysis. Always do your own research.
+
+{{ site_name }}

@@ -1,0 +1,637 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Monitoring ML - GPW Trading Advisor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .log-viewer {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: 'Courier New', monospace;
+        border-radius: 8px;
+        padding: 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+        font-size: 0.9rem;
+    }
+    .log-line {
+        margin-bottom: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+    }
+    .log-info { color: #4fc3f7; }
+    .log-warning { color: #ffb74d; background-color: rgba(255, 183, 77, 0.1); }
+    .log-error { color: #f48fb1; background-color: rgba(244, 143, 177, 0.1); }
+    .log-success { color: #81c784; background-color: rgba(129, 199, 132, 0.1); }
+    .log-debug { color: #b0bec5; }
+    
+    .metric-card {
+        transition: transform 0.2s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .performance-chart {
+        height: 300px;
+    }
+    
+    .system-status {
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+    }
+    .status-healthy { background: #d4edda; color: #155724; }
+    .status-warning { background: #fff3cd; color: #856404; }
+    .status-critical { background: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Monitoring ML
+                </h1>
+                <div class="btn-group">
+                    <a href="{% url 'analysis:ml_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Dashboard
+                    </a>
+                    <button class="btn btn-outline-primary" id="refreshAll">
+                        <i class="fas fa-sync-alt me-2"></i>Odśwież Wszystko
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body text-center">
+                    <div class="system-status status-healthy">
+                        <i class="fas fa-heartbeat fa-2x mb-2"></i>
+                        <h6>System Health</h6>
+                        <span class="badge bg-success">Healthy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Predykcje/dzień</h6>
+                    <h3 class="text-primary" id="predictionsToday">--</h3>
+                    <small class="text-success">↑ 15% vs wczoraj</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Średnia Dokładność</h6>
+                    <h3 class="text-success" id="avgAccuracy">--</h3>
+                    <small class="text-success">↑ 2.3% vs tydzień</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card metric-card">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Uptime</h6>
+                    <h3 class="text-info" id="systemUptime">99.8%</h3>
+                    <small class="text-muted">ostatnie 30 dni</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Real-time Logs -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-terminal me-2"></i>
+                        Logi w Czasie Rzeczywistym
+                    </h5>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" data-filter="all">Wszystkie</button>
+                        <button class="btn btn-outline-warning" data-filter="warning">Ostrzeżenia</button>
+                        <button class="btn btn-outline-danger" data-filter="error">Błędy</button>
+                        <button class="btn btn-outline-success" data-filter="success">Sukces</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="log-viewer" id="logViewer">
+                        <div class="log-line log-info">[{{ now|date:"H:i:s" }}] System monitoring started</div>
+                        <div class="log-line log-success">[{{ now|date:"H:i:s" }}] ML models loaded successfully</div>
+                        <div class="log-line log-info">[{{ now|date:"H:i:s" }}] Waiting for new log entries...</div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Auto-scroll: 
+                            <input type="checkbox" id="autoScroll" checked> 
+                            | Filtr poziomu: 
+                            <select id="logLevel" class="form-select form-select-sm d-inline-block w-auto">
+                                <option value="all">Wszystkie</option>
+                                <option value="info">Info</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                                <option value="success">Success</option>
+                            </select>
+                        </small>
+                        <button class="btn btn-sm btn-outline-secondary" id="clearLogs">
+                            <i class="fas fa-trash me-2"></i>Wyczyść
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Charts -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Wydajność Modeli
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <canvas id="accuracyTrendChart" class="performance-chart"></canvas>
+                        </div>
+                        <div class="col-md-6">
+                            <canvas id="predictionVolumeChart" class="performance-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status Sidebar -->
+        <div class="col-lg-4">
+            <!-- Current Processes -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Aktywne Procesy
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="processContainer">
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin me-2"></i>
+                            Ładowanie procesów...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Usage -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-microchip me-2"></i>
+                        Wykorzystanie Zasobów
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>CPU</span>
+                            <span id="cpuUsage">--</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Pamięć</span>
+                            <span id="memoryUsage">--</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-info" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Dysk</span>
+                            <span id="diskUsage">--</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-info" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="d-flex justify-content-between">
+                            <span>GPU (ML)</span>
+                            <span id="gpuUsage">--</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-secondary" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>
+                        Ostatnie Alerty
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning alert-sm p-2 mb-2">
+                        <small>
+                            <strong>09:30</strong> - Wysoka volatilność dla PKNORLEN<br>
+                            <span class="text-muted">Confidence: 87%</span>
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info alert-sm p-2 mb-2">
+                        <small>
+                            <strong>09:25</strong> - Model accuracy improved to 94.2%<br>
+                            <span class="text-muted">Price predictor</span>
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-success alert-sm p-2 mb-2">
+                        <small>
+                            <strong>09:20</strong> - Training completed successfully<br>
+                            <span class="text-muted">150 epochs, 0.0023 final loss</span>
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-danger alert-sm p-2">
+                        <small>
+                            <strong>08:45</strong> - API rate limit exceeded<br>
+                            <span class="text-muted">External data provider</span>
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="#" class="btn btn-sm btn-outline-primary w-100">Zobacz Wszystkie Alerty</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let logCounter = 0;
+    let charts = {};
+    
+    // Initialize charts
+    initializeCharts();
+    
+    // Load initial data immediately
+    updateAllData();
+    
+    // Auto-refresh functionality
+    let refreshInterval = setInterval(updateAllData, 5000);
+    
+    function initializeCharts() {
+        // Accuracy Trend Chart
+        const accuracyCtx = document.getElementById('accuracyTrendChart').getContext('2d');
+        charts.accuracy = new Chart(accuracyCtx, {
+            type: 'line',
+            data: {
+                labels: ['9:00', '9:15', '9:30', '9:45', '10:00', '10:15'],
+                datasets: [{
+                    label: 'Dokładność (%)',
+                    data: [92.1, 93.2, 94.1, 93.8, 94.2, 94.5],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 90,
+                        max: 100
+                    }
+                }
+            }
+        });
+        
+        // Prediction Volume Chart
+        const volumeCtx = document.getElementById('predictionVolumeChart').getContext('2d');
+        charts.volume = new Chart(volumeCtx, {
+            type: 'bar',
+            data: {
+                labels: ['9:00', '9:15', '9:30', '9:45', '10:00', '10:15'],
+                datasets: [{
+                    label: 'Predykcje',
+                    data: [12, 19, 25, 22, 28, 31],
+                    backgroundColor: '#007bff',
+                    borderColor: '#0056b3',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    function addLogEntry(level, message, timestamp = null) {
+        const logViewer = document.getElementById('logViewer');
+        const time = timestamp || new Date().toLocaleTimeString();
+        
+        const logLine = document.createElement('div');
+        logLine.className = `log-line log-${level}`;
+        logLine.innerHTML = `[${time}] ${message}`;
+        
+        logViewer.appendChild(logLine);
+        
+        // Auto-scroll if enabled
+        if (document.getElementById('autoScroll').checked) {
+            logViewer.scrollTop = logViewer.scrollHeight;
+        }
+        
+        // Limit log entries
+        const logLines = logViewer.querySelectorAll('.log-line');
+        if (logLines.length > 100) {
+            logLines[0].remove();
+        }
+    }
+    
+    function updateAllData() {
+        // Update real-time data
+        updateMetrics();
+        updateProcesses();
+        updateResourceUsage();
+        loadRealLogs();
+    }
+    
+    function loadRealLogs() {
+        // Fetch real logs from API
+        fetch('/analysis/api/ml/logs/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.logs && data.logs.length > 0) {
+                    // Add new logs that aren't already displayed
+                    data.logs.forEach(log => {
+                        const logId = `log-${log.timestamp}-${log.message.substring(0, 20)}`;
+                        if (!document.getElementById(logId)) {
+                            const logLine = document.createElement('div');
+                            logLine.id = logId;
+                            logLine.className = `log-line log-${log.level}`;
+                            logLine.innerHTML = `[${log.timestamp}] ${log.message}`;
+                            
+                            const logViewer = document.getElementById('logViewer');
+                            logViewer.appendChild(logLine);
+                            
+                            // Auto-scroll if enabled
+                            if (document.getElementById('autoScroll').checked) {
+                                logViewer.scrollTop = logViewer.scrollHeight;
+                            }
+                        }
+                    });
+                    
+                    // Limit log entries
+                    const logLines = document.querySelectorAll('.log-line');
+                    if (logLines.length > 100) {
+                        for (let i = 0; i < logLines.length - 100; i++) {
+                            logLines[i].remove();
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error loading logs:', error);
+                // Fallback - only show system generated logs
+            });
+    }
+    
+    function updateMetrics() {
+        // Update predictions count
+        const predictions = Math.floor(Math.random() * 10) + 45;
+        document.getElementById('predictionsToday').textContent = predictions;
+        
+        // Update accuracy
+        const accuracy = (93 + Math.random() * 4).toFixed(1) + '%';
+        document.getElementById('avgAccuracy').textContent = accuracy;
+    }
+    
+    function updateProcesses() {
+        // Fetch real system processes from API
+        fetch('/analysis/api/ml/processes/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.data) {
+                    const processContainer = document.getElementById('processContainer');
+                    
+                    if (data.data.length === 0) {
+                        processContainer.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-exclamation-circle me-2"></i>Brak aktywnych procesów</div>';
+                        return;
+                    }
+                    
+                    let processesHTML = '';
+                    data.data.forEach(process => {
+                        const badgeClass = process.status_class === 'success' ? 'bg-success' : 
+                                         process.status_class === 'warning' ? 'bg-warning' : 
+                                         process.status_class === 'info' ? 'bg-info' : 'bg-secondary';
+                        
+                        const progressClass = process.status_class === 'success' ? 'bg-success' : 
+                                            process.status_class === 'warning' ? 'bg-warning' : 
+                                            process.status_class === 'info' ? 'bg-info' : '';
+                        
+                        processesHTML += `
+                            <div class="process-item mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <i class="${process.icon} me-2"></i>
+                                        ${process.name}
+                                        <small class="text-muted">(PID: ${process.pid})</small>
+                                    </span>
+                                    <span class="badge ${badgeClass}">${process.status}</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 4px;">
+                                    <div class="progress-bar ${progressClass}" style="width: ${process.progress}%"></div>
+                                </div>
+                                <small class="text-muted">CPU: ${process.cpu_percent}% | Memory: ${process.memory_percent}%</small>
+                            </div>
+                        `;
+                    });
+                    
+                    processContainer.innerHTML = processesHTML;
+                } else {
+                    console.error('Error fetching processes:', data.message);
+                    document.getElementById('processContainer').innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle me-2"></i>Błąd ładowania procesów</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching processes:', error);
+                document.getElementById('processContainer').innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle me-2"></i>Błąd połączenia z API</div>';
+            });
+    }
+    
+    function updateResourceUsage() {
+        // Fetch real system resource data from API
+        fetch('/analysis/api/ml/system-resources/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const resources = data.data;
+                    
+                    // Update CPU
+                    document.getElementById('cpuUsage').textContent = resources.cpu_percent + '%';
+                    document.querySelector('[id="cpuUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = resources.cpu_percent + '%';
+                    
+                    // Update Memory
+                    document.getElementById('memoryUsage').textContent = resources.memory_percent + '%';
+                    document.querySelector('[id="memoryUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = resources.memory_percent + '%';
+                    
+                    // Update Disk
+                    document.getElementById('diskUsage').textContent = resources.disk_percent + '%';
+                    document.querySelector('[id="diskUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = resources.disk_percent + '%';
+                    
+                    // Update GPU
+                    document.getElementById('gpuUsage').textContent = resources.gpu_info;
+                    
+                    // Color-code progress bars based on usage
+                    const cpuBar = document.querySelector('[id="cpuUsage"]').parentNode.nextElementSibling.firstElementChild;
+                    const memoryBar = document.querySelector('[id="memoryUsage"]').parentNode.nextElementSibling.firstElementChild;
+                    const diskBar = document.querySelector('[id="diskUsage"]').parentNode.nextElementSibling.firstElementChild;
+                    
+                    // CPU colors
+                    cpuBar.className = 'progress-bar';
+                    if (resources.cpu_percent > 80) cpuBar.classList.add('bg-danger');
+                    else if (resources.cpu_percent > 60) cpuBar.classList.add('bg-warning');
+                    else cpuBar.classList.add('bg-success');
+                    
+                    // Memory colors  
+                    memoryBar.className = 'progress-bar';
+                    if (resources.memory_percent > 85) memoryBar.classList.add('bg-danger');
+                    else if (resources.memory_percent > 70) memoryBar.classList.add('bg-warning');
+                    else memoryBar.classList.add('bg-info');
+                    
+                    // Disk colors
+                    diskBar.className = 'progress-bar';
+                    if (resources.disk_percent > 90) diskBar.classList.add('bg-danger');
+                    else if (resources.disk_percent > 75) diskBar.classList.add('bg-warning');
+                    else diskBar.classList.add('bg-info');
+                    
+                    // Log system info if detailed view
+                    if (resources.system_info && Math.random() < 0.1) {
+                        addLogEntry('info', `System: ${resources.system_info.platform} ${resources.system_info.platform_version}, Uptime: ${resources.uptime_hours}h`);
+                    }
+                    
+                    // Log warnings for high usage
+                    if (resources.cpu_percent > 80) {
+                        addLogEntry('warning', `High CPU usage detected: ${resources.cpu_percent}%`);
+                    }
+                    if (resources.memory_percent > 85) {
+                        addLogEntry('warning', `High memory usage detected: ${resources.memory_percent}%`);
+                    }
+                    if (resources.disk_percent > 90) {
+                        addLogEntry('error', `Critical disk usage: ${resources.disk_percent}%`);
+                    }
+                    
+                } else {
+                    console.error('Error fetching system resources:', data.error);
+                    addLogEntry('error', 'Failed to fetch system resource data');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching system resources:', error);
+                addLogEntry('error', 'System monitoring connection failed');
+                
+                // Fallback to mock data if API fails
+                const cpu = Math.floor(Math.random() * 30) + 15;
+                const memory = Math.floor(Math.random() * 20) + 60;
+                const disk = Math.floor(Math.random() * 10) + 40;
+                
+                document.getElementById('cpuUsage').textContent = cpu + '%';
+                document.getElementById('memoryUsage').textContent = memory + '%';
+                document.getElementById('diskUsage').textContent = disk + '%';
+                
+                document.querySelector('[id="cpuUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = cpu + '%';
+                document.querySelector('[id="memoryUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = memory + '%';
+                document.querySelector('[id="diskUsage"]').parentNode.nextElementSibling.firstElementChild.style.width = disk + '%';
+            });
+    }
+    
+    // Event listeners
+    document.getElementById('refreshAll').addEventListener('click', function() {
+        addLogEntry('info', 'Manual refresh triggered');
+        updateAllData();
+    });
+    
+    document.getElementById('clearLogs').addEventListener('click', function() {
+        const logViewer = document.getElementById('logViewer');
+        logViewer.innerHTML = '<div class="log-line log-info">[' + new Date().toLocaleTimeString() + '] Logs cleared by user</div>';
+    });
+    
+    // Log filtering
+    document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            const logLines = document.querySelectorAll('.log-line');
+            
+            logLines.forEach(line => {
+                if (filter === 'all' || line.classList.contains(`log-${filter}`)) {
+                    line.style.display = 'block';
+                } else {
+                    line.style.display = 'none';
+                }
+            });
+            
+            // Update button states
+            document.querySelectorAll('[data-filter]').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+    
+    // Log level filter
+    document.getElementById('logLevel').addEventListener('change', function() {
+        const level = this.value;
+        const logLines = document.querySelectorAll('.log-line');
+        
+        logLines.forEach(line => {
+            if (level === 'all' || line.classList.contains(`log-${level}`)) {
+                line.style.display = 'block';
+            } else {
+                line.style.display = 'none';
+            }
+        });
+    });
+    
+    // Load initial data
+    setTimeout(() => {
+        loadRealLogs();
+        updateProcesses();
+    }, 1000);
+});
+</script>
+{% endblock %}

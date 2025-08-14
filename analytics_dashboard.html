@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPW2 Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .widget {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .widget:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .widget-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .widget-icon {
+            font-size: 2em;
+            margin-right: 15px;
+        }
+        
+        .widget-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .loading::before {
+            content: "⏳";
+            font-size: 2em;
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #c33;
+            margin: 10px 0;
+        }
+        
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .stock-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .stock-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .stock-symbol {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stock-name {
+            font-size: 0.9em;
+            color: #666;
+        }
+        
+        .sentiment-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .sentiment-positive { background: #d4edda; color: #155724; }
+        .sentiment-negative { background: #f8d7da; color: #721c24; }
+        .sentiment-neutral { background: #e2e3e5; color: #383d41; }
+        
+        .alert-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .alert-positive {
+            background: #d1f2eb;
+            border-color: #28a745;
+        }
+        
+        .alert-negative {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+        
+        .alert-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .alert-meta {
+            font-size: 0.85em;
+            color: #666;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-operational { background: #28a745; }
+        .status-degraded { background: #ffc107; }
+        .status-error { background: #dc3545; }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 GPW2 Analytics Dashboard</h1>
+            <p>Zaawansowana analiza rynku kapitałowego z AI</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Quick Stats Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">⚡</span>
+                    <span class="widget-title">Szybkie Statystyki</span>
+                    <button class="refresh-btn" onclick="loadQuickStats()">Odśwież</button>
+                </div>
+                <div id="quick-stats-content">
+                    <div class="loading">Ładowanie danych...</div>
+                </div>
+            </div>
+
+            <!-- Market Overview Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">📈</span>
+                    <span class="widget-title">Przegląd Rynku</span>
+                    <button class="refresh-btn" onclick="loadMarketOverview()">Odśwież</button>
+                </div>
+                <div id="market-overview-content">
+                    <div class="loading">Ładowanie danych...</div>
+                </div>
+            </div>
+
+            <!-- Sentiment Trends Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">😊</span>
+                    <span class="widget-title">Trendy Sentymentu</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Top Stocks Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">🏢</span>
+                    <span class="widget-title">Top Spółki</span>
+                </div>
+                <div id="top-stocks-content">
+                    <div class="loading">Ładowanie danych...</div>
+                </div>
+            </div>
+
+            <!-- System Health Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">⚕️</span>
+                    <span class="widget-title">Stan Systemu</span>
+                </div>
+                <div id="system-health-content">
+                    <div class="loading">Ładowanie danych...</div>
+                </div>
+            </div>
+
+            <!-- Alerts Widget -->
+            <div class="widget">
+                <div class="widget-header">
+                    <span class="widget-icon">🚨</span>
+                    <span class="widget-title">Alerty</span>
+                </div>
+                <div id="alerts-content">
+                    <div class="loading">Ładowanie danych...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://127.0.0.1:8001/api/analytics';
+        
+        // Charts
+        let sentimentChart = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllData();
+            
+            // Auto-refresh every 5 minutes
+            setInterval(loadAllData, 5 * 60 * 1000);
+        });
+
+        async function loadAllData() {
+            await Promise.all([
+                loadQuickStats(),
+                loadMarketOverview(),
+                loadSentimentTrends(),
+                loadSystemHealth(),
+                loadAlerts()
+            ]);
+        }
+
+        async function apiCall(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'API Error');
+                }
+                
+                return data.data;
+            } catch (error) {
+                console.error(`API call failed for ${endpoint}:`, error);
+                throw error;
+            }
+        }
+
+        async function loadQuickStats() {
+            try {
+                const data = await apiCall('/quick-stats/');
+                
+                const content = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.articles_24h}</div>
+                            <div class="stat-label">Artykuły (24h)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.analyzed_24h}</div>
+                            <div class="stat-label">Analizy AI (24h)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.scraping_success_rate}%</div>
+                            <div class="stat-label">Sukces Scrapingu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">
+                                <span class="status-indicator status-${data.system_status}"></span>
+                                ${data.system_status}
+                            </div>
+                            <div class="stat-label">Status Systemu</div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('quick-stats-content').innerHTML = content;
+            } catch (error) {
+                document.getElementById('quick-stats-content').innerHTML = 
+                    `<div class="error">Błąd ładowania: ${error.message}</div>`;
+            }
+        }
+
+        async function loadMarketOverview() {
+            try {
+                const data = await apiCall('/market-overview/?days=7');
+                
+                const content = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.total_articles.toLocaleString()}</div>
+                            <div class="stat-label">Wszystkie Artykuły</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.coverage_rate}%</div>
+                            <div class="stat-label">Pokrycie AI</div>
+                        </div>
+                    </div>
+                    <div class="stock-list">
+                        ${data.top_mentioned_stocks.slice(0, 5).map(stock => `
+                            <div class="stock-item">
+                                <div>
+                                    <div class="stock-symbol">${stock.symbol}</div>
+                                    <div class="stock-name">${stock.name}</div>
+                                </div>
+                                <div>${stock.mentions} wzmianek</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                document.getElementById('market-overview-content').innerHTML = content;
+            } catch (error) {
+                document.getElementById('market-overview-content').innerHTML = 
+                    `<div class="error">Błąd ładowania: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSentimentTrends() {
+            try {
+                const data = await apiCall('/sentiment-trends/?days=7&granularity=daily');
+                
+                const ctx = document.getElementById('sentimentChart').getContext('2d');
+                
+                if (sentimentChart) {
+                    sentimentChart.destroy();
+                }
+                
+                // Process data for chart
+                const chartData = data.sentiment_scores.slice(-7); // Last 7 days
+                
+                sentimentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: chartData.map(item => {
+                            const date = new Date(item.date);
+                            return date.toLocaleDateString('pl-PL', { month: 'short', day: 'numeric' });
+                        }),
+                        datasets: [{
+                            label: 'Średni Sentyment',
+                            data: chartData.map(item => item.avg_sentiment || 0),
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (error) {
+                document.getElementById('sentimentChart').parentNode.innerHTML = 
+                    `<div class="error">Błąd ładowania wykresu: ${error.message}</div>`;
+            }
+        }
+
+        async function loadSystemHealth() {
+            try {
+                const data = await apiCall('/system-health/');
+                
+                const content = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.scraping_performance.success_rate}%</div>
+                            <div class="stat-label">Sukces Scrapingu</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.ai_analysis_performance.analyses_last_24h}</div>
+                            <div class="stat-label">Analizy AI (24h)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.data_quality.coverage_percentage}%</div>
+                            <div class="stat-label">Pokrycie Danych</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.scraping_performance.items_created || 0}</div>
+                            <div class="stat-label">Nowe Elementy</div>
+                        </div>
+                    </div>
+                    ${data.recent_errors.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>Ostatnie błędy:</strong>
+                            ${data.recent_errors.slice(0, 3).map(error => `
+                                <div class="error" style="margin-top: 8px; padding: 8px;">
+                                    <strong>${error.schedule__name}:</strong> ${error.error_message.substring(0, 80)}...
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : '<div style="color: #28a745; margin-top: 15px;">✅ Brak błędów w systemie</div>'}
+                `;
+                
+                document.getElementById('system-health-content').innerHTML = content;
+            } catch (error) {
+                document.getElementById('system-health-content').innerHTML = 
+                    `<div class="error">Błąd ładowania: ${error.message}</div>`;
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const data = await apiCall('/alerts/');
+                
+                const allAlerts = [
+                    ...data.positive_alerts.slice(0, 3).map(alert => ({...alert, type: 'positive'})),
+                    ...data.negative_alerts.slice(0, 3).map(alert => ({...alert, type: 'negative'}))
+                ];
+                
+                if (allAlerts.length === 0) {
+                    document.getElementById('alerts-content').innerHTML = 
+                        '<div style="text-align: center; color: #666; padding: 40px;">Brak alertów do wyświetlenia</div>';
+                    return;
+                }
+                
+                const content = allAlerts.map(alert => `
+                    <div class="alert-item alert-${alert.type}">
+                        <div class="alert-title">${alert.title.substring(0, 60)}...</div>
+                        <div class="alert-meta">
+                            Sentyment: ${alert.sentiment_score.toFixed(3)} | 
+                            Wpływ: ${alert.impact_score.toFixed(3)} |
+                            Spółki: ${alert.mentioned_stocks.join(', ') || 'Ogólne'}
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('alerts-content').innerHTML = content;
+            } catch (error) {
+                document.getElementById('alerts-content').innerHTML = 
+                    `<div class="error">Błąd ładowania: ${error.message}</div>`;
+            }
+        }
+
+        // Error handling for fetch requests
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+        });
+    </script>
+</body>
+</html>

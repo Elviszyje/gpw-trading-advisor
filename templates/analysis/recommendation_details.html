@@ -1,0 +1,561 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Recommendation Details{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .recommendation-row {
+        border-bottom: 1px solid #e9ecef;
+        padding: 1rem 0;
+        transition: background-color 0.2s;
+    }
+    
+    .recommendation-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .recommendation-row:last-child {
+        border-bottom: none;
+    }
+    
+    .outcome-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .outcome-correct {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .outcome-incorrect {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .outcome-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .signal-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+    
+    .signal-buy {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .signal-sell {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .signal-hold {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .price-comparison {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .price-arrow {
+        font-size: 1.2rem;
+    }
+    
+    .price-up {
+        color: #28a745;
+    }
+    
+    .price-down {
+        color: #dc3545;
+    }
+    
+    .roi-positive {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .roi-negative {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .learning-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+    }
+    
+    .used-for-learning {
+        background: #28a745;
+    }
+    
+    .not-used-for-learning {
+        background: #6c757d;
+    }
+    
+    .pagination-custom {
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .stats-summary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .export-btn {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .export-btn:hover {
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-list-alt me-2"></i>Recommendation Details</h2>
+                    <p class="text-muted">Detailed analysis of all trading recommendations and outcomes</p>
+                </div>
+                <div>
+                    <button class="btn btn-success export-btn me-2" onclick="exportToCSV()">
+                        <i class="fas fa-download me-1"></i>
+                        Export CSV
+                    </button>
+                    <a href="{% url 'analysis:recommendation_dashboard' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+    {% else %}
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="days" class="form-label">Time Period</label>
+                <select class="form-select" id="days" name="days">
+                    <option value="7" {% if filters.days == 7 %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if filters.days == 30 %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if filters.days == 90 %}selected{% endif %}>Last 3 months</option>
+                    <option value="0" {% if filters.days == 0 %}selected{% endif %}>All time</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label for="symbol" class="form-label">Stock Symbol</label>
+                <input type="text" class="form-control" id="symbol" name="symbol" 
+                       value="{{ filters.symbol }}" placeholder="e.g. PKN, CCC">
+            </div>
+            
+            <div class="col-md-3">
+                <label for="signal_type" class="form-label">Signal Type</label>
+                <select class="form-select" id="signal_type" name="signal_type">
+                    <option value="">All types</option>
+                    <option value="BUY" {% if filters.signal_type == 'BUY' %}selected{% endif %}>BUY</option>
+                    <option value="SELL" {% if filters.signal_type == 'SELL' %}selected{% endif %}>SELL</option>
+                    <option value="HOLD" {% if filters.signal_type == 'HOLD' %}selected{% endif %}>HOLD</option>
+                </select>
+            </div>
+            
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i>
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="stats-summary">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <h4 id="totalCount">{{ signals_data|length }}</h4>
+                <small>Total Recommendations</small>
+            </div>
+            <div class="col-md-3">
+                <h4 id="completedCount">
+                    {% with completed=signals_data|length %}
+                        {% for signal_data in signals_data %}
+                            {% if signal_data.analysis.status == 'completed' %}{{ forloop.counter0 }}{% endif %}
+                        {% endfor %}
+                    {% endwith %}
+                </h4>
+                <small>Completed</small>
+            </div>
+            <div class="col-md-3">
+                <h4 id="accuracyRate">-</h4>
+                <small>Accuracy Rate</small>
+            </div>
+            <div class="col-md-3">
+                <h4 id="avgROI">-</h4>
+                <small>Average ROI</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Table -->
+    <div class="card">
+        <div class="card-header">
+            <h6><i class="fas fa-table me-2"></i>Detailed Recommendations</h6>
+        </div>
+        <div class="card-body p-0">
+            {% if signals_data %}
+                {% for signal_data in signals_data %}
+                {% with signal=signal_data.signal analysis=signal_data.analysis %}
+                <div class="recommendation-row">
+                    <div class="row align-items-center">
+                        <!-- Signal Type Icon -->
+                        <div class="col-md-1">
+                            <div class="signal-icon signal-{{ signal.signal_type|lower }}">
+                                {% if signal.signal_type == 'BUY' %}
+                                    <i class="fas fa-arrow-up"></i>
+                                {% elif signal.signal_type == 'SELL' %}
+                                    <i class="fas fa-arrow-down"></i>
+                                {% else %}
+                                    <i class="fas fa-minus"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Stock & Signal Info -->
+                        <div class="col-md-2">
+                            <h6 class="mb-1">{{ signal.stock.symbol }}</h6>
+                            <small class="text-muted">{{ signal.signal_type }}</small>
+                            {% if analysis.status == 'completed' and signal.prediction_correct %}
+                                <span class="learning-indicator used-for-learning" 
+                                      title="Used for model learning"></span>
+                            {% else %}
+                                <span class="learning-indicator not-used-for-learning" 
+                                      title="Not used for learning"></span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Price Information -->
+                        <div class="col-md-3">
+                            <div class="price-comparison">
+                                <div class="text-center">
+                                    <small class="text-muted d-block">Predicted</small>
+                                    <strong>{{ signal.predicted_price|floatformat:2 }}</strong>
+                                </div>
+                                
+                                {% if analysis.outcome_price %}
+                                    <div class="price-arrow">
+                                        {% if analysis.outcome_price > signal.predicted_price %}
+                                            <i class="fas fa-arrow-right price-up"></i>
+                                        {% elif analysis.outcome_price < signal.predicted_price %}
+                                            <i class="fas fa-arrow-right price-down"></i>
+                                        {% else %}
+                                            <i class="fas fa-arrow-right text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="text-center">
+                                        <small class="text-muted d-block">Actual</small>
+                                        <strong>{{ analysis.outcome_price|floatformat:2 }}</strong>
+                                    </div>
+                                {% else %}
+                                    <div class="text-center">
+                                        <small class="text-muted d-block">Actual</small>
+                                        <span class="text-muted">Pending</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Outcome & Accuracy -->
+                        <div class="col-md-2">
+                            {% if analysis.status == 'completed' %}
+                                <div class="outcome-badge {% if analysis.accuracy %}outcome-correct{% else %}outcome-incorrect{% endif %}">
+                                    {% if analysis.accuracy %}
+                                        <i class="fas fa-check me-1"></i>Correct
+                                    {% else %}
+                                        <i class="fas fa-times me-1"></i>Incorrect
+                                    {% endif %}
+                                </div>
+                            {% elif analysis.status == 'pending' %}
+                                <div class="outcome-badge outcome-pending">
+                                    <i class="fas fa-clock me-1"></i>Pending
+                                </div>
+                            {% else %}
+                                <div class="outcome-badge outcome-incorrect">
+                                    <i class="fas fa-exclamation me-1"></i>Error
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- ROI -->
+                        <div class="col-md-2">
+                            {% if analysis.roi is not None %}
+                                <div class="{% if analysis.roi > 0 %}roi-positive{% else %}roi-negative{% endif %}">
+                                    {{ analysis.roi|floatformat:2 }}%
+                                </div>
+                                <small class="text-muted">ROI</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Timing -->
+                        <div class="col-md-2">
+                            <div>
+                                <small class="text-muted d-block">Created</small>
+                                <small>{{ signal.created_at|date:"M d, H:i" }}</small>
+                            </div>
+                            {% if analysis.time_to_outcome %}
+                            <div class="mt-1">
+                                <small class="text-muted d-block">Duration</small>
+                                <small>{{ analysis.time_to_outcome }}h</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Recommendations Found</h5>
+                    <p class="text-muted">Try adjusting your filter criteria or check back later for new recommendations.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- Export Progress Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Exporting Data</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Preparing your recommendation data export...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        calculateSummaryStats();
+    });
+    
+    function calculateSummaryStats() {
+        const rows = document.querySelectorAll('.recommendation-row');
+        let completed = 0;
+        let correct = 0;
+        let totalROI = 0;
+        let roiCount = 0;
+        
+        rows.forEach(row => {
+            const outcomeElement = row.querySelector('.outcome-badge');
+            if (outcomeElement) {
+                if (outcomeElement.textContent.includes('Correct') || outcomeElement.textContent.includes('Incorrect')) {
+                    completed++;
+                    if (outcomeElement.textContent.includes('Correct')) {
+                        correct++;
+                    }
+                }
+            }
+            
+            const roiElement = row.querySelector('.roi-positive, .roi-negative');
+            if (roiElement) {
+                const roiValue = parseFloat(roiElement.textContent.replace('%', ''));
+                if (!isNaN(roiValue)) {
+                    totalROI += roiValue;
+                    roiCount++;
+                }
+            }
+        });
+        
+        // Update summary stats
+        document.getElementById('completedCount').textContent = completed;
+        
+        if (completed > 0) {
+            const accuracy = (correct / completed * 100).toFixed(1);
+            document.getElementById('accuracyRate').textContent = accuracy + '%';
+        } else {
+            document.getElementById('accuracyRate').textContent = '-';
+        }
+        
+        if (roiCount > 0) {
+            const avgROI = (totalROI / roiCount).toFixed(2);
+            document.getElementById('avgROI').textContent = avgROI + '%';
+        } else {
+            document.getElementById('avgROI').textContent = '-';
+        }
+    }
+    
+    function exportToCSV() {
+        // Show loading modal
+        const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+        modal.show();
+        
+        // Collect data for export
+        const rows = document.querySelectorAll('.recommendation-row');
+        const csvData = [];
+        
+        // Header
+        csvData.push([
+            'Stock Symbol',
+            'Signal Type',
+            'Predicted Price',
+            'Actual Price',
+            'Outcome',
+            'ROI %',
+            'Created Date',
+            'Time to Outcome (hours)',
+            'Used for Learning'
+        ]);
+        
+        // Data rows
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('div');
+            const symbol = row.querySelector('h6').textContent.trim();
+            const signalType = row.querySelector('small.text-muted').textContent.trim();
+            
+            // Extract data with fallbacks
+            const predictedPrice = extractPrice(row, 'Predicted') || '';
+            const actualPrice = extractPrice(row, 'Actual') || '';
+            const outcome = extractOutcome(row) || '';
+            const roi = extractROI(row) || '';
+            const createdDate = extractDate(row) || '';
+            const timeToOutcome = extractTimeToOutcome(row) || '';
+            const usedForLearning = row.querySelector('.used-for-learning') ? 'Yes' : 'No';
+            
+            csvData.push([
+                symbol,
+                signalType,
+                predictedPrice,
+                actualPrice,
+                outcome,
+                roi,
+                createdDate,
+                timeToOutcome,
+                usedForLearning
+            ]);
+        });
+        
+        // Convert to CSV string
+        const csvString = csvData.map(row => 
+            row.map(cell => `"${cell}"`).join(',')
+        ).join('\n');
+        
+        // Download file
+        setTimeout(() => {
+            const blob = new Blob([csvString], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recommendations_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            modal.hide();
+        }, 1500);
+    }
+    
+    function extractPrice(row, type) {
+        const priceElements = row.querySelectorAll('.price-comparison strong');
+        if (type === 'Predicted' && priceElements[0]) {
+            return priceElements[0].textContent.trim();
+        } else if (type === 'Actual' && priceElements[1]) {
+            return priceElements[1].textContent.trim();
+        }
+        return '';
+    }
+    
+    function extractOutcome(row) {
+        const outcomeElement = row.querySelector('.outcome-badge');
+        if (outcomeElement) {
+            return outcomeElement.textContent.trim();
+        }
+        return '';
+    }
+    
+    function extractROI(row) {
+        const roiElement = row.querySelector('.roi-positive, .roi-negative');
+        if (roiElement) {
+            return roiElement.textContent.trim();
+        }
+        return '';
+    }
+    
+    function extractDate(row) {
+        const dateElements = row.querySelectorAll('small');
+        for (let element of dateElements) {
+            if (element.previousElementSibling && 
+                element.previousElementSibling.textContent.includes('Created')) {
+                return element.textContent.trim();
+            }
+        }
+        return '';
+    }
+    
+    function extractTimeToOutcome(row) {
+        const durationElements = row.querySelectorAll('small');
+        for (let element of durationElements) {
+            if (element.previousElementSibling && 
+                element.previousElementSibling.textContent.includes('Duration')) {
+                return element.textContent.trim();
+            }
+        }
+        return '';
+    }
+</script>
+{% endblock %}

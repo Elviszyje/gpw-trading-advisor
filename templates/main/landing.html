@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} | GPW Trading Advisor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .feature-card {
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line me-2"></i>
+                GPW Trading Advisor
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/users/login/">
+                    <i class="fas fa-sign-in-alt me-1"></i>Logowanie
+                </a>
+                <a class="nav-link" href="/users/register/">
+                    <i class="fas fa-user-plus me-1"></i>Rejestracja
+                </a>
+                <a class="nav-link" href="/users/management/">
+                    <i class="fas fa-cogs me-1"></i>Management
+                </a>
+                <a class="nav-link" href="/admin/">
+                    <i class="fas fa-shield-alt me-1"></i>Admin
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">GPW Trading Advisor</h1>
+            <p class="lead mb-5">{{ description }}</p>
+            <div class="row justify-content-center">
+                <div class="col-auto">
+                    <a href="/users/register/" class="btn btn-light btn-lg me-3">
+                        <i class="fas fa-user-plus me-2"></i>Rozpocznij
+                    </a>
+                    <a href="/users/login/" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Zaloguj się
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col">
+                    <h2 class="fw-bold">Funkcje Platformy</h2>
+                    <p class="text-muted">Wszystko czego potrzebujesz do analizy GPW</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-chart-area fa-3x text-primary mb-3"></i>
+                            <h5 class="card-title">Analiza Techniczna</h5>
+                            <p class="card-text">Zaawansowane wskaźniki techniczne i analiza trendów dla akcji GPW.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-newspaper fa-3x text-success mb-3"></i>
+                            <h5 class="card-title">Analiza Sentymentu</h5>
+                            <p class="card-text">Automatyczna analiza sentymentu z wiadomości i mediów społecznościowych.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-bell fa-3x text-warning mb-3"></i>
+                            <h5 class="card-title">Powiadomienia</h5>
+                            <p class="card-text">Personalizowane alerty i powiadomienia o ważnych wydarzeniach rynkowych.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-tachometer-alt fa-3x text-info mb-3"></i>
+                            <h5 class="card-title">Dashboard</h5>
+                            <p class="card-text">Intuicyjny dashboard z kluczowymi metrykami i analizami.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-robot fa-3x text-danger mb-3"></i>
+                            <h5 class="card-title">AI & Machine Learning</h5>
+                            <p class="card-text">Wykorzystanie sztucznej inteligencji do przewidywania trendów.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-download fa-3x text-secondary mb-3"></i>
+                            <h5 class="card-title">Eksport Danych</h5>
+                            <p class="card-text">Możliwość eksportu analiz i raportów w różnych formatach.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Status -->
+    <section class="bg-light py-5">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col">
+                    <h3 class="fw-bold mb-4">Status Systemu</h3>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <h6>Analiza Sentymentu</h6>
+                    <small class="text-muted">Aktywne</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <h6>System Użytkowników</h6>
+                    <small class="text-muted">Aktywne</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <h6>Dashboard</h6>
+                    <small class="text-muted">Aktywne</small>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="mb-2">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <h6>API Analytics</h6>
+                    <small class="text-muted">Aktywne</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>GPW Trading Advisor</h6>
+                    <p class="text-muted">Platforma inteligencji tradingowej dla Giełdy Papierów Wartościowych w Warszawie</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="text-muted mb-0">© 2025 GPW Trading Advisor. Wszystkie prawa zastrzeżone.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

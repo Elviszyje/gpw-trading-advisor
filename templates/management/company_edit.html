@@ -1,0 +1,254 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Edycja spółki {{ company.symbol }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Edycja spółki</h1>
+                    <p class="text-muted">Symbol: {{ company.symbol }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'users:company_detail' company.symbol %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Powrót
+                    </a>
+                </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Podstawowe informacje</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="name" class="form-label">Nazwa spółki *</label>
+                                            <input type="text" class="form-control" id="name" name="name" 
+                                                   value="{{ company.name }}" required>
+                                            <div class="form-text">Pełna nazwa spółki</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="sector" class="form-label">Sektor (legacy)</label>
+                                            <input type="text" class="form-control" id="sector" name="sector" 
+                                                   value="{{ company.sector }}">
+                                            <div class="form-text">Stary format sektora</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="market" class="form-label">Rynek</label>
+                                            <select class="form-select" id="market" name="market">
+                                                <option value="">-- Wybierz rynek --</option>
+                                                {% for market in markets %}
+                                                    <option value="{{ market.id }}" 
+                                                            {% if company.market and company.market.id == market.id %}selected{% endif %}>
+                                                        {{ market.name }} ({{ market.code }})
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">Rynek na którym notowana jest spółka</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="primary_industry" class="form-label">Główny sektor</label>
+                                            <select class="form-select" id="primary_industry" name="primary_industry">
+                                                <option value="">-- Wybierz sektor --</option>
+                                                {% for industry in industries %}
+                                                    <option value="{{ industry.id }}" 
+                                                            {% if company.primary_industry and company.primary_industry.id == industry.id %}selected{% endif %}>
+                                                        {{ industry.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">Główna branża działalności</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="isin_code" class="form-label">Kod ISIN</label>
+                                            <input type="text" class="form-control" id="isin_code" name="isin_code" 
+                                                   value="{{ company.isin_code }}" maxlength="12">
+                                            <div class="form-text">Międzynarodowy kod identyfikacyjny</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="market_cap" class="form-label">Kapitalizacja (PLN)</label>
+                                            <input type="text" class="form-control" id="market_cap" name="market_cap" 
+                                                   value="{% if company.market_cap %}{{ company.market_cap }}{% endif %}">
+                                            <div class="form-text">Kapitalizacja rynkowa w PLN</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="website" class="form-label">Strona internetowa</label>
+                                    <input type="url" class="form-control" id="website" name="website" 
+                                           value="{{ company.website }}">
+                                    <div class="form-text">Oficjalna strona spółki</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="business_description" class="form-label">Opis działalności</label>
+                                    <textarea class="form-control" id="business_description" name="business_description" 
+                                              rows="4">{{ company.business_description }}</textarea>
+                                    <div class="form-text">Krótki opis działalności firmy</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="keywords" class="form-label">Słowa kluczowe AI</label>
+                                    <input type="text" class="form-control" id="keywords" name="keywords" 
+                                           value="{{ keywords_str }}">
+                                    <div class="form-text">Słowa kluczowe oddzielone przecinkami (dla klasyfikacji newsów AI)</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="is_monitored" name="is_monitored" 
+                                               {% if company.is_monitored %}checked{% endif %}>
+                                        <label class="form-check-label" for="is_monitored">
+                                            Aktywnie monitorowana
+                                        </label>
+                                        <div class="form-text">Czy spółka jest aktywnie monitorowana przez system</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <a href="{% url 'users:company_detail' company.symbol %}" class="btn btn-secondary">
+                                            Anuluj
+                                        </a>
+                                        <!-- Delete button -->
+                                        <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
+                                            <i class="fas fa-trash"></i> Usuń spółkę
+                                        </button>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Zapisz zmiany
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side panel with additional info -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Informacje systemowe</h6>
+                        </div>
+                        <div class="card-body">
+                            <small class="text-muted">
+                                <strong>Symbol:</strong> {{ company.symbol }}<br>
+                                <strong>Utworzona:</strong> {{ company.created_at|date:"d.m.Y H:i" }}<br>
+                                <strong>Ostatnia aktualizacja:</strong> {{ company.updated_at|date:"d.m.Y H:i" }}<br>
+                                <strong>Status:</strong> 
+                                {% if company.is_active %}
+                                    <span class="badge bg-success">Aktywna</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Nieaktywna</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Dostępne rynki</h6>
+                        </div>
+                        <div class="card-body">
+                            <small class="text-muted">
+                                {% for market in markets %}
+                                    <div class="mb-1">
+                                        <strong>{{ market.code }}:</strong> {{ market.name }}
+                                        {% if market.is_regulated %}
+                                            <span class="badge bg-info ms-1">Regulowany</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-labelledby="deleteCompanyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCompanyModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    Potwierdzenie usunięcia
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Uwaga!</strong> Ta operacja nie może zostać cofnięta.
+                </div>
+                <p>Czy na pewno chcesz usunąć spółkę <strong>{{ company.symbol }} - {{ company.name }}</strong>?</p>
+                <p class="text-muted small">
+                    Spółka zostanie oznaczona jako nieaktywna (soft delete) i nie będzie widoczna w systemie. 
+                    Wszystkie powiązane dane historyczne zostaną zachowane.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <form method="post" action="{% url 'users:company_delete' company.symbol %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirm_delete" value="yes">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Usuń spółkę
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Format market cap input
+    $('#market_cap').on('input', function() {
+        let value = $(this).val().replace(/\D/g, '');
+        if (value) {
+            $(this).val(parseInt(value).toLocaleString());
+        }
+    });
+    
+    // Remove formatting before submit
+    $('form').on('submit', function() {
+        let marketCap = $('#market_cap').val().replace(/\D/g, '');
+        $('#market_cap').val(marketCap);
+    });
+});
+</script>
+{% endblock %}

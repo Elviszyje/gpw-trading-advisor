@@ -1,0 +1,512 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Preferencje Handlowe{% endblock %}
+
+{% block extra_css %}
+<style>
+    .trading-preferences-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .preferences-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .preferences-header h1 {
+        margin-bottom: 10px;
+        font-size: 2.5rem;
+    }
+    
+    .preferences-header p {
+        opacity: 0.9;
+        font-size: 1.1rem;
+    }
+    
+    .preference-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: 1px solid #e0e0e0;
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #f5f5f5;
+    }
+    
+    .card-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 15px;
+        padding: 8px;
+        background: #007bff;
+        color: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .card-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-group {
+        flex: 1;
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #555;
+        font-size: 0.95rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        outline: none;
+    }
+    
+    .form-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 12px center;
+        background-repeat: no-repeat;
+        background-size: 16px;
+        padding-right: 40px;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 25px;
+        padding-top: 25px;
+        border-top: 2px solid #f5f5f5;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 0;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,123,255,0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .trading-style-info {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .trading-style-info h6 {
+        color: #0066cc;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+    
+    .trading-style-info p {
+        margin: 0;
+        color: #004080;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+    
+    .navigation-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .error-message {
+        background: #ffe6e6;
+        border: 1px solid #ff9999;
+        color: #cc0000;
+        padding: 10px 15px;
+        border-radius: 6px;
+        margin-top: 5px;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .trading-preferences-container {
+            padding: 10px;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 0;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .navigation-buttons {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trading-preferences-container">
+    <!-- Header -->
+    <div class="preferences-header">
+        <h1>🎯 Preferencje Handlowe</h1>
+        <p>Dostosuj parametry handlowe do swojego stylu i tolerancji ryzyka</p>
+    </div>
+
+    <form method="post" id="trading-preferences-form">
+        {% csrf_token %}
+        
+        <!-- Financial Parameters -->
+        <div class="preference-card">
+            <div class="card-header">
+                <div class="card-icon">💰</div>
+                <h2 class="card-title">Parametry Finansowe</h2>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.available_capital.id_for_label }}">
+                        {{ form.available_capital.label }}
+                    </label>
+                    {{ form.available_capital }}
+                    {% if form.available_capital.help_text %}
+                        <div class="help-text">{{ form.available_capital.help_text }}</div>
+                    {% endif %}
+                    {% if form.available_capital.errors %}
+                        <div class="error-message">{{ form.available_capital.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.target_profit_percentage.id_for_label }}">
+                        {{ form.target_profit_percentage.label }}
+                    </label>
+                    {{ form.target_profit_percentage }}
+                    {% if form.target_profit_percentage.help_text %}
+                        <div class="help-text">{{ form.target_profit_percentage.help_text }}</div>
+                    {% endif %}
+                    {% if form.target_profit_percentage.errors %}
+                        <div class="error-message">{{ form.target_profit_percentage.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.max_loss_percentage.id_for_label }}">
+                        {{ form.max_loss_percentage.label }}
+                    </label>
+                    {{ form.max_loss_percentage }}
+                    {% if form.max_loss_percentage.help_text %}
+                        <div class="help-text">{{ form.max_loss_percentage.help_text }}</div>
+                    {% endif %}
+                    {% if form.max_loss_percentage.errors %}
+                        <div class="error-message">{{ form.max_loss_percentage.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.min_confidence_threshold.id_for_label }}">
+                        {{ form.min_confidence_threshold.label }}
+                    </label>
+                    {{ form.min_confidence_threshold }}
+                    {% if form.min_confidence_threshold.help_text %}
+                        <div class="help-text">{{ form.min_confidence_threshold.help_text }}</div>
+                    {% endif %}
+                    {% if form.min_confidence_threshold.errors %}
+                        <div class="error-message">{{ form.min_confidence_threshold.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Position Management -->
+        <div class="preference-card">
+            <div class="card-header">
+                <div class="card-icon">📊</div>
+                <h2 class="card-title">Zarządzanie Pozycjami</h2>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.max_position_size_percentage.id_for_label }}">
+                        {{ form.max_position_size_percentage.label }}
+                    </label>
+                    {{ form.max_position_size_percentage }}
+                    {% if form.max_position_size_percentage.help_text %}
+                        <div class="help-text">{{ form.max_position_size_percentage.help_text }}</div>
+                    {% endif %}
+                    {% if form.max_position_size_percentage.errors %}
+                        <div class="error-message">{{ form.max_position_size_percentage.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.min_position_value.id_for_label }}">
+                        {{ form.min_position_value.label }}
+                    </label>
+                    {{ form.min_position_value }}
+                    {% if form.min_position_value.help_text %}
+                        <div class="help-text">{{ form.min_position_value.help_text }}</div>
+                    {% endif %}
+                    {% if form.min_position_value.errors %}
+                        <div class="error-message">{{ form.min_position_value.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Style -->
+        <div class="preference-card">
+            <div class="card-header">
+                <div class="card-icon">🎨</div>
+                <h2 class="card-title">Styl Handlowy</h2>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.trading_style.id_for_label }}">
+                        {{ form.trading_style.label }}
+                    </label>
+                    {{ form.trading_style }}
+                    {% if form.trading_style.help_text %}
+                        <div class="help-text">{{ form.trading_style.help_text }}</div>
+                    {% endif %}
+                    {% if form.trading_style.errors %}
+                        <div class="error-message">{{ form.trading_style.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="{{ form.market_conditions_preference.id_for_label }}">
+                        {{ form.market_conditions_preference.label }}
+                    </label>
+                    {{ form.market_conditions_preference }}
+                    {% if form.market_conditions_preference.help_text %}
+                        <div class="help-text">{{ form.market_conditions_preference.help_text }}</div>
+                    {% endif %}
+                    {% if form.market_conditions_preference.errors %}
+                        <div class="error-message">{{ form.market_conditions_preference.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Dynamic trading style info -->
+            <div id="trading-style-info" class="trading-style-info" style="display: none;">
+                <h6 id="style-title"></h6>
+                <p id="style-description"></p>
+            </div>
+        </div>
+
+        <!-- Statistics Preview -->
+        <div class="preference-card">
+            <div class="card-header">
+                <div class="card-icon">📈</div>
+                <h2 class="card-title">Podgląd Parametrów</h2>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="max-loss-value">{{ stats.max_single_loss|floatformat:0 }} PLN</div>
+                    <p class="stat-label">Maksymalna strata na pozycję</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="max-profit-value">{{ stats.max_single_profit|floatformat:0 }} PLN</div>
+                    <p class="stat-label">Cel zysku na pozycję</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="max-position-value">{{ stats.max_position_value|floatformat:0 }} PLN</div>
+                    <p class="stat-label">Maksymalna wartość pozycji</p>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="daily-risk-value">{{ stats.daily_risk_capital|floatformat:0 }} PLN</div>
+                    <p class="stat-label">Dzienny budżet ryzyka (2%)</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Errors -->
+        {% if form.non_field_errors %}
+            <div class="preference-card">
+                <div class="error-message">
+                    {{ form.non_field_errors }}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="navigation-buttons">
+            <div>
+                <a href="{% url 'users:preferences_summary' %}" class="btn-secondary">📊 Podsumowanie</a>
+                <a href="{% url 'users:risk_management' %}" class="btn-secondary">🛡️ Zarządzanie Ryzykiem</a>
+            </div>
+            <div>
+                <button type="submit" class="btn-primary">💾 Zapisz Preferencje</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Trading style descriptions
+const tradingStyleInfo = {
+    'conservative': {
+        title: 'Konserwatywny 🛡️',
+        description: 'Bezpieczeństwo jest priorytetem. Mniejsze pozycje, wyższe progi confidence, ograniczone ryzyko. Idealny dla zachowania kapitału.'
+    },
+    'moderate': {
+        title: 'Umiarkowany ⚖️',
+        description: 'Zrównoważone podejście między ryzykiem a zyskiem. Standardowe parametry, średnie pozycje, rozsądne zarządzanie ryzykiem.'
+    },
+    'aggressive': {
+        title: 'Agresywny 🚀',
+        description: 'Celuje w wysokie zyski akceptując wyższe ryzyko. Większe pozycje, niższe progi confidence, wyższe cele zysku.'
+    },
+    'scalping': {
+        title: 'Scalping ⚡',
+        description: 'Szybkie transakcje z małymi zyskami. Wysokie progi confidence, krótkie horyzonty, częste transakcje.'
+    },
+    'swing': {
+        title: 'Swing Trading 📊',
+        description: 'Średnioterminowe pozycje (dni/tygodnie). Większe cele zysku, szersze stop lossy, mniej transakcji.'
+    }
+};
+
+// Update trading style info when selection changes
+document.getElementById('{{ form.trading_style.id_for_label }}').addEventListener('change', function() {
+    const selectedStyle = this.value;
+    const infoDiv = document.getElementById('trading-style-info');
+    const titleEl = document.getElementById('style-title');
+    const descEl = document.getElementById('style-description');
+    
+    if (selectedStyle && tradingStyleInfo[selectedStyle]) {
+        titleEl.textContent = tradingStyleInfo[selectedStyle].title;
+        descEl.textContent = tradingStyleInfo[selectedStyle].description;
+        infoDiv.style.display = 'block';
+    } else {
+        infoDiv.style.display = 'none';
+    }
+});
+
+// Trigger initial style info display
+document.getElementById('{{ form.trading_style.id_for_label }}').dispatchEvent(new Event('change'));
+
+// Real-time stats update
+function updateStats() {
+    const capital = parseFloat(document.getElementById('{{ form.available_capital.id_for_label }}').value) || 0;
+    const targetProfit = parseFloat(document.getElementById('{{ form.target_profit_percentage.id_for_label }}').value) || 0;
+    const maxLoss = parseFloat(document.getElementById('{{ form.max_loss_percentage.id_for_label }}').value) || 0;
+    const maxPosition = parseFloat(document.getElementById('{{ form.max_position_size_percentage.id_for_label }}').value) || 0;
+    
+    document.getElementById('max-loss-value').textContent = Math.round(capital * maxLoss / 100) + ' PLN';
+    document.getElementById('max-profit-value').textContent = Math.round(capital * targetProfit / 100) + ' PLN';
+    document.getElementById('max-position-value').textContent = Math.round(capital * maxPosition / 100) + ' PLN';
+    document.getElementById('daily-risk-value').textContent = Math.round(capital * 0.02) + ' PLN';
+}
+
+// Add event listeners for real-time updates
+['{{ form.available_capital.id_for_label }}', '{{ form.target_profit_percentage.id_for_label }}', 
+ '{{ form.max_loss_percentage.id_for_label }}', '{{ form.max_position_size_percentage.id_for_label }}']
+.forEach(id => {
+    document.getElementById(id).addEventListener('input', updateStats);
+});
+</script>
+{% endblock %}

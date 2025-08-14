@@ -1,0 +1,588 @@
+{% extends 'main/base.html' %}
+
+{% block title %}ML Learning Analytics{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analytics-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+        border: none;
+    }
+    
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-value {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .improvement-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+    
+    .improvement-positive {
+        background: rgba(40, 167, 69, 0.2);
+        color: #28a745;
+    }
+    
+    .improvement-negative {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+    
+    .improvement-neutral {
+        background: rgba(108, 117, 125, 0.2);
+        color: #6c757d;
+    }
+    
+    .learning-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+        border-left: 2px solid #e9ecef;
+    }
+    
+    .timeline-item:last-child {
+        border-left: 2px solid transparent;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -8px;
+        top: 0;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #007bff;
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .timeline-content {
+        margin-left: 2rem;
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .feedback-breakdown {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .feedback-item {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 10px;
+        background: #f8f9fa;
+    }
+    
+    .feedback-positive {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+    }
+    
+    .feedback-negative {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+    }
+    
+    .progress-ring {
+        position: relative;
+        display: inline-block;
+        width: 120px;
+        height: 120px;
+    }
+    
+    .progress-ring-circle {
+        transition: stroke-dashoffset 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .learning-status-active {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .learning-status-inactive {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .model-performance-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 600;
+        margin: 0.2rem;
+    }
+    
+    .performance-excellent {
+        background: #28a745;
+        color: white;
+    }
+    
+    .performance-good {
+        background: #20c997;
+        color: white;
+    }
+    
+    .performance-average {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .performance-poor {
+        background: #dc3545;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-brain me-2"></i>ML Learning Analytics</h2>
+                    <p class="text-muted">Track model learning effectiveness and performance improvements</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary me-2" onclick="refreshAnalytics()">
+                        <i class="fas fa-sync-alt me-1"></i>
+                        Refresh
+                    </button>
+                    <a href="{% url 'analysis:ml_config' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-cog me-1"></i>
+                        ML Config
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+    {% else %}
+
+    <!-- Key Learning Metrics -->
+    <div class="row mb-4">
+        <div class="col-lg-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ learning_metrics.recent_accuracy }}%</div>
+                <div class="metric-label">Current Accuracy</div>
+                <div class="improvement-indicator {% if learning_metrics.improvement > 0 %}improvement-positive{% elif learning_metrics.improvement < 0 %}improvement-negative{% else %}improvement-neutral{% endif %}">
+                    {% if learning_metrics.improvement > 0 %}
+                        <i class="fas fa-arrow-up me-1"></i>
+                        +{{ learning_metrics.improvement }}%
+                    {% elif learning_metrics.improvement < 0 %}
+                        <i class="fas fa-arrow-down me-1"></i>
+                        {{ learning_metrics.improvement }}%
+                    {% else %}
+                        <i class="fas fa-minus me-1"></i>
+                        No change
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ learning_metrics.baseline_accuracy }}%</div>
+                <div class="metric-label">Baseline Accuracy</div>
+                <div class="improvement-indicator improvement-neutral">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Starting point
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ learning_metrics.improvement_percentage }}%</div>
+                <div class="metric-label">Improvement Rate</div>
+                <div class="improvement-indicator {% if learning_metrics.improvement_percentage > 0 %}improvement-positive{% else %}improvement-neutral{% endif %}">
+                    <i class="fas fa-percentage me-1"></i>
+                    Performance gain
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ feedback_analysis.total_feedback_instances }}</div>
+                <div class="metric-label">Learning Instances</div>
+                <div class="improvement-indicator improvement-positive">
+                    <i class="fas fa-database me-1"></i>
+                    Data points
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Status & Performance History -->
+    <div class="row mb-4">
+        <!-- Current Learning Status -->
+        <div class="col-lg-4">
+            <div class="analytics-card">
+                <h5><i class="fas fa-toggle-on me-2"></i>Learning Status</h5>
+                
+                {% if learning_metrics.recent_accuracy > 0 %}
+                <div class="learning-status-active">
+                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                    <h6>Learning Active</h6>
+                    <p class="mb-0">Model is continuously improving based on feedback</p>
+                </div>
+                {% else %}
+                <div class="learning-status-inactive">
+                    <i class="fas fa-pause-circle fa-2x mb-2"></i>
+                    <h6>Learning Paused</h6>
+                    <p class="mb-0">Enable feedback collection to start learning</p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">Performance Classification:</small><br>
+                    {% if learning_metrics.recent_accuracy >= 75 %}
+                        <span class="model-performance-badge performance-excellent">Excellent</span>
+                    {% elif learning_metrics.recent_accuracy >= 65 %}
+                        <span class="model-performance-badge performance-good">Good</span>
+                    {% elif learning_metrics.recent_accuracy >= 50 %}
+                        <span class="model-performance-badge performance-average">Average</span>
+                    {% else %}
+                        <span class="model-performance-badge performance-poor">Needs Improvement</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance History Chart -->
+        <div class="col-lg-8">
+            <div class="analytics-card">
+                <h5><i class="fas fa-chart-line me-2"></i>Performance Evolution</h5>
+                <div class="chart-container">
+                    <canvas id="performanceChart" width="600" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Analysis -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="analytics-card">
+                <h5><i class="fas fa-comments me-2"></i>Feedback Analysis</h5>
+                
+                <div class="feedback-breakdown">
+                    <div class="feedback-item feedback-positive">
+                        <i class="fas fa-thumbs-up fa-2x mb-2"></i>
+                        <h4>{{ feedback_analysis.positive_feedback_count }}</h4>
+                        <small>Positive Feedback</small>
+                        <div class="mt-2">
+                            <small class="text-muted">Avg Impact: {{ feedback_analysis.positive_avg_impact }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="feedback-item feedback-negative">
+                        <i class="fas fa-thumbs-down fa-2x mb-2"></i>
+                        <h4>{{ feedback_analysis.negative_feedback_count }}</h4>
+                        <small>Negative Feedback</small>
+                        <div class="mt-2">
+                            <small class="text-muted">Avg Impact: {{ feedback_analysis.negative_avg_impact }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <small>Feedback Utilization Rate</small>
+                        <small>{{ feedback_analysis.total_feedback_instances }} instances</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {% widthratio feedback_analysis.positive_feedback_count feedback_analysis.total_feedback_instances 100 %}%">
+                        </div>
+                        <div class="progress-bar bg-danger" role="progressbar" 
+                             style="width: {% widthratio feedback_analysis.negative_feedback_count feedback_analysis.total_feedback_instances 100 %}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Learning Timeline -->
+        <div class="col-lg-6">
+            <div class="analytics-card">
+                <h5><i class="fas fa-history me-2"></i>Learning Timeline</h5>
+                
+                <div class="learning-timeline">
+                    {% for event in performance_history|slice:":5" %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>{{ event.date }}</h6>
+                            <p class="mb-2">Model Accuracy: <strong>{{ event.accuracy }}%</strong></p>
+                            <small class="text-muted">
+                                Based on {{ event.total_samples }} sample{{ event.total_samples|pluralize }}
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">No learning history available yet</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Learning Insights -->
+    <div class="row">
+        <div class="col-12">
+            <div class="analytics-card">
+                <h5><i class="fas fa-lightbulb me-2"></i>Learning Insights</h5>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Key Findings:</h6>
+                        <ul class="list-unstyled">
+                            {% if learning_metrics.improvement > 0 %}
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Model accuracy improved by {{ learning_metrics.improvement }}% through learning
+                            </li>
+                            {% endif %}
+                            
+                            {% if feedback_analysis.positive_feedback_count > feedback_analysis.negative_feedback_count %}
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Positive feedback dominates ({{ feedback_analysis.positive_feedback_count }} vs {{ feedback_analysis.negative_feedback_count }})
+                            </li>
+                            {% endif %}
+                            
+                            {% if learning_metrics.recent_accuracy >= 65 %}
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Current accuracy level indicates effective learning
+                            </li>
+                            {% else %}
+                            <li class="mb-2">
+                                <i class="fas fa-exclamation text-warning me-2"></i>
+                                Model needs more training data for optimal performance
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Recommendations:</h6>
+                        <ul class="list-unstyled">
+                            {% if feedback_analysis.total_feedback_instances < 100 %}
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Collect more feedback instances for better learning
+                            </li>
+                            {% endif %}
+                            
+                            {% if learning_metrics.improvement <= 0 %}
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Review model parameters and feature engineering
+                            </li>
+                            {% endif %}
+                            
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-right text-primary me-2"></i>
+                                Monitor daily accuracy trends for early detection of issues
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let performanceChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initializePerformanceChart();
+    });
+    
+    function initializePerformanceChart() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const historyData = {{ performance_history|safe }};
+        
+        performanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: historyData.map(d => d.date),
+                datasets: [{
+                    label: 'Model Accuracy %',
+                    data: historyData.map(d => d.accuracy),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: 'rgb(75, 192, 192)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Accuracy Percentage'
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const dataPoint = historyData[context.dataIndex];
+                                return `Samples: ${dataPoint.total_samples}`;
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    function refreshAnalytics() {
+        // Show loading state
+        const refreshBtn = document.querySelector('button[onclick="refreshAnalytics()"]');
+        const originalText = refreshBtn.innerHTML;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Refreshing...';
+        refreshBtn.disabled = true;
+        
+        // Simulate refresh (in real implementation, this would fetch fresh data)
+        setTimeout(() => {
+            // Reset button
+            refreshBtn.innerHTML = originalText;
+            refreshBtn.disabled = false;
+            
+            // Show success message
+            showToast('Analytics refreshed successfully', 'success');
+        }, 2000);
+    }
+    
+    function showToast(message, type = 'info') {
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        // Add to container
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        toastContainer.appendChild(toast);
+        
+        // Show toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remove after hide
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,475 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} | GPW Trading Advisor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .config-form {
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        
+        .weight-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .weight-bars {
+            display: flex;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .weight-bar {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            transition: width 0.3s ease;
+        }
+        
+        .weight-15m { background-color: #e74c3c; }
+        .weight-1h { background-color: #f39c12; }
+        .weight-4h { background-color: #3498db; }
+        .weight-today { background-color: #95a5a6; }
+        
+        .validation-feedback {
+            display: block !important;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .form-section h5 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        
+        .multiplier-preview {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .multiplier-item {
+            flex: 1;
+            padding: 0.5rem;
+        }
+        
+        .multiplier-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .multiplier-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .total-weight-indicator {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .total-weight-valid {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .total-weight-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'users:dashboard' %}">
+                <i class="fas fa-chart-line"></i> GPW Trading Advisor
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'analysis:time_weight_dashboard' %}">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Page Header -->
+        <div class="mb-4">
+            <h1><i class="fas fa-edit"></i> {{ page_title }}</h1>
+            <p class="text-muted mb-0">Skonfiguruj wagi czasowe dla analizy newsów</p>
+        </div>
+
+        <!-- Display Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="config-form" id="config-form">
+            {% csrf_token %}
+            
+            <!-- Basic Configuration -->
+            <div class="form-section">
+                <h5><i class="fas fa-info-circle"></i> Basic Configuration</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                            {{ form.name }}
+                            {% if form.name.help_text %}
+                                <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                            {% endif %}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">{{ form.name.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.trading_style.id_for_label }}" class="form-label">{{ form.trading_style.label }}</label>
+                            {{ form.trading_style }}
+                            {% if form.trading_style.help_text %}
+                                <small class="form-text text-muted">{{ form.trading_style.help_text }}</small>
+                            {% endif %}
+                            {% if form.trading_style.errors %}
+                                <div class="invalid-feedback">{{ form.trading_style.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                        {% if form.is_active.help_text %}
+                            <small class="form-text text-muted d-block">{{ form.is_active.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Decay Settings -->
+            <div class="form-section">
+                <h5><i class="fas fa-clock"></i> Time Decay Settings</h5>
+                <div class="mb-3">
+                    <label for="{{ form.half_life_minutes.id_for_label }}" class="form-label">{{ form.half_life_minutes.label }}</label>
+                    {{ form.half_life_minutes }}
+                    {% if form.half_life_minutes.help_text %}
+                        <small class="form-text text-muted">{{ form.half_life_minutes.help_text }}</small>
+                    {% endif %}
+                    {% if form.half_life_minutes.errors %}
+                        <div class="invalid-feedback">{{ form.half_life_minutes.errors.0 }}</div>
+                    {% endif %}
+                    <div class="mt-2">
+                        <small class="text-info">
+                            <i class="fas fa-info-circle"></i>
+                            Half-life determines how quickly news loses impact. Shorter values mean faster decay.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Period Weights -->
+            <div class="form-section">
+                <h5><i class="fas fa-balance-scale"></i> Time Period Weights</h5>
+                <p class="text-muted">Distribute weights across different time periods. Total must equal 1.0 (±5%)</p>
+                
+                <!-- Total Weight Indicator -->
+                <div id="total-weight-indicator" class="total-weight-indicator">
+                    <span id="weight-sum">0.000</span> / 1.000
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.last_15min_weight.id_for_label }}" class="form-label">
+                                {{ form.last_15min_weight.label }}
+                                <span class="badge bg-danger">Most Critical</span>
+                            </label>
+                            {{ form.last_15min_weight }}
+                            {% if form.last_15min_weight.help_text %}
+                                <small class="form-text text-muted">{{ form.last_15min_weight.help_text }}</small>
+                            {% endif %}
+                            {% if form.last_15min_weight.errors %}
+                                <div class="invalid-feedback">{{ form.last_15min_weight.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.last_4hour_weight.id_for_label }}" class="form-label">{{ form.last_4hour_weight.label }}</label>
+                            {{ form.last_4hour_weight }}
+                            {% if form.last_4hour_weight.help_text %}
+                                <small class="form-text text-muted">{{ form.last_4hour_weight.help_text }}</small>
+                            {% endif %}
+                            {% if form.last_4hour_weight.errors %}
+                                <div class="invalid-feedback">{{ form.last_4hour_weight.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.last_1hour_weight.id_for_label }}" class="form-label">{{ form.last_1hour_weight.label }}</label>
+                            {{ form.last_1hour_weight }}
+                            {% if form.last_1hour_weight.help_text %}
+                                <small class="form-text text-muted">{{ form.last_1hour_weight.help_text }}</small>
+                            {% endif %}
+                            {% if form.last_1hour_weight.errors %}
+                                <div class="invalid-feedback">{{ form.last_1hour_weight.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.today_weight.id_for_label }}" class="form-label">{{ form.today_weight.label }}</label>
+                            {{ form.today_weight }}
+                            {% if form.today_weight.help_text %}
+                                <small class="form-text text-muted">{{ form.today_weight.help_text }}</small>
+                            {% endif %}
+                            {% if form.today_weight.errors %}
+                                <div class="invalid-feedback">{{ form.today_weight.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight Distribution Preview -->
+                <div class="weight-preview">
+                    <h6>Weight Distribution Preview</h6>
+                    <div class="weight-bars" id="weight-bars">
+                        <div class="weight-bar weight-15m" id="bar-15m">0%</div>
+                        <div class="weight-bar weight-1h" id="bar-1h">0%</div>
+                        <div class="weight-bar weight-4h" id="bar-4h">0%</div>
+                        <div class="weight-bar weight-today" id="bar-today">0%</div>
+                    </div>
+                    <div class="d-flex justify-content-between small text-muted">
+                        <span>Last 15 minutes</span>
+                        <span>Last 1 hour</span>
+                        <span>Last 4 hours</span>
+                        <span>Today</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Impact Multipliers -->
+            <div class="form-section">
+                <h5><i class="fas fa-bullseye"></i> Impact Multipliers</h5>
+                <p class="text-muted">Multipliers for different news contexts and market conditions</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.breaking_news_multiplier.id_for_label }}" class="form-label">
+                                {{ form.breaking_news_multiplier.label }}
+                                <span class="badge bg-danger">High Impact</span>
+                            </label>
+                            {{ form.breaking_news_multiplier }}
+                            {% if form.breaking_news_multiplier.help_text %}
+                                <small class="form-text text-muted">{{ form.breaking_news_multiplier.help_text }}</small>
+                            {% endif %}
+                            {% if form.breaking_news_multiplier.errors %}
+                                <div class="invalid-feedback">{{ form.breaking_news_multiplier.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.market_hours_multiplier.id_for_label }}" class="form-label">{{ form.market_hours_multiplier.label }}</label>
+                            {{ form.market_hours_multiplier }}
+                            {% if form.market_hours_multiplier.help_text %}
+                                <small class="form-text text-muted">{{ form.market_hours_multiplier.help_text }}</small>
+                            {% endif %}
+                            {% if form.market_hours_multiplier.errors %}
+                                <div class="invalid-feedback">{{ form.market_hours_multiplier.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="{{ form.pre_market_multiplier.id_for_label }}" class="form-label">{{ form.pre_market_multiplier.label }}</label>
+                            {{ form.pre_market_multiplier }}
+                            {% if form.pre_market_multiplier.help_text %}
+                                <small class="form-text text-muted">{{ form.pre_market_multiplier.help_text }}</small>
+                            {% endif %}
+                            {% if form.pre_market_multiplier.errors %}
+                                <div class="invalid-feedback">{{ form.pre_market_multiplier.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Multiplier Preview -->
+                <div class="weight-preview">
+                    <h6>Multiplier Preview</h6>
+                    <div class="multiplier-preview">
+                        <div class="multiplier-item">
+                            <div class="multiplier-value text-danger" id="breaking-preview">2.0x</div>
+                            <div class="multiplier-label">Breaking News</div>
+                        </div>
+                        <div class="multiplier-item">
+                            <div class="multiplier-value text-primary" id="market-preview">1.5x</div>
+                            <div class="multiplier-label">Market Hours</div>
+                        </div>
+                        <div class="multiplier-item">
+                            <div class="multiplier-value text-warning" id="premarket-preview">1.2x</div>
+                            <div class="multiplier-label">Pre-Market</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Thresholds -->
+            <div class="form-section">
+                <h5><i class="fas fa-chart-bar"></i> Analysis Thresholds</h5>
+                <div class="mb-3">
+                    <label for="{{ form.min_impact_threshold.id_for_label }}" class="form-label">{{ form.min_impact_threshold.label }}</label>
+                    {{ form.min_impact_threshold }}
+                    {% if form.min_impact_threshold.help_text %}
+                        <small class="form-text text-muted">{{ form.min_impact_threshold.help_text }}</small>
+                    {% endif %}
+                    {% if form.min_impact_threshold.errors %}
+                        <div class="invalid-feedback">{{ form.min_impact_threshold.errors.0 }}</div>
+                    {% endif %}
+                    <div class="mt-2">
+                        <small class="text-info">
+                            <i class="fas fa-info-circle"></i>
+                            News with impact below this threshold will not affect trading signals.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'analysis:time_weight_dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Cancel
+                </a>
+                <div>
+                    <button type="submit" class="btn btn-primary" id="save-btn">
+                        <i class="fas fa-save"></i> Save Configuration
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Real-time weight validation and preview
+        function updateWeightPreview() {
+            const weights = {
+                '15m': parseFloat(document.getElementById('{{ form.last_15min_weight.id_for_label }}').value) || 0,
+                '1h': parseFloat(document.getElementById('{{ form.last_1hour_weight.id_for_label }}').value) || 0,
+                '4h': parseFloat(document.getElementById('{{ form.last_4hour_weight.id_for_label }}').value) || 0,
+                'today': parseFloat(document.getElementById('{{ form.today_weight.id_for_label }}').value) || 0
+            };
+            
+            const totalWeight = weights['15m'] + weights['1h'] + weights['4h'] + weights['today'];
+            
+            // Update bars
+            document.getElementById('bar-15m').style.width = (weights['15m'] * 100) + '%';
+            document.getElementById('bar-15m').textContent = (weights['15m'] * 100).toFixed(0) + '%';
+            
+            document.getElementById('bar-1h').style.width = (weights['1h'] * 100) + '%';
+            document.getElementById('bar-1h').textContent = (weights['1h'] * 100).toFixed(0) + '%';
+            
+            document.getElementById('bar-4h').style.width = (weights['4h'] * 100) + '%';
+            document.getElementById('bar-4h').textContent = (weights['4h'] * 100).toFixed(0) + '%';
+            
+            document.getElementById('bar-today').style.width = (weights['today'] * 100) + '%';
+            document.getElementById('bar-today').textContent = (weights['today'] * 100).toFixed(0) + '%';
+            
+            // Update total weight indicator
+            const weightSum = document.getElementById('weight-sum');
+            const indicator = document.getElementById('total-weight-indicator');
+            
+            weightSum.textContent = totalWeight.toFixed(3);
+            
+            if (Math.abs(totalWeight - 1.0) <= 0.05) {
+                indicator.className = 'total-weight-indicator total-weight-valid';
+            } else {
+                indicator.className = 'total-weight-indicator total-weight-invalid';
+            }
+        }
+        
+        // Real-time multiplier preview
+        function updateMultiplierPreview() {
+            const breaking = parseFloat(document.getElementById('{{ form.breaking_news_multiplier.id_for_label }}').value) || 0;
+            const market = parseFloat(document.getElementById('{{ form.market_hours_multiplier.id_for_label }}').value) || 0;
+            const premarket = parseFloat(document.getElementById('{{ form.pre_market_multiplier.id_for_label }}').value) || 0;
+            
+            document.getElementById('breaking-preview').textContent = breaking.toFixed(1) + 'x';
+            document.getElementById('market-preview').textContent = market.toFixed(1) + 'x';
+            document.getElementById('premarket-preview').textContent = premarket.toFixed(1) + 'x';
+        }
+        
+        // Add event listeners
+        document.querySelectorAll('.weight-input').forEach(input => {
+            input.addEventListener('input', updateWeightPreview);
+        });
+        
+        document.getElementById('{{ form.breaking_news_multiplier.id_for_label }}').addEventListener('input', updateMultiplierPreview);
+        document.getElementById('{{ form.market_hours_multiplier.id_for_label }}').addEventListener('input', updateMultiplierPreview);
+        document.getElementById('{{ form.pre_market_multiplier.id_for_label }}').addEventListener('input', updateMultiplierPreview);
+        
+        // Initial update
+        updateWeightPreview();
+        updateMultiplierPreview();
+        
+        // Form validation
+        document.getElementById('config-form').addEventListener('submit', function(e) {
+            const weights = [
+                parseFloat(document.getElementById('{{ form.last_15min_weight.id_for_label }}').value) || 0,
+                parseFloat(document.getElementById('{{ form.last_1hour_weight.id_for_label }}').value) || 0,
+                parseFloat(document.getElementById('{{ form.last_4hour_weight.id_for_label }}').value) || 0,
+                parseFloat(document.getElementById('{{ form.today_weight.id_for_label }}').value) || 0
+            ];
+            
+            const totalWeight = weights.reduce((a, b) => a + b, 0);
+            
+            if (Math.abs(totalWeight - 1.0) > 0.05) {
+                e.preventDefault();
+                alert(`Weight distribution must sum to approximately 1.0. Current sum: ${totalWeight.toFixed(3)}`);
+                return false;
+            }
+            
+            // Show loading state
+            const saveBtn = document.getElementById('save-btn');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

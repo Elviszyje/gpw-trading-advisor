@@ -1,0 +1,12 @@
+{
+  "epochs": 300,
+  "learning_rate": 0.002,
+  "batch_size": 64,
+  "lookback_days": 90,
+  "prediction_horizon_hours": 5,
+  "early_stopping_patience": 15,
+  "use_enhanced_features": "true",
+  "auto_retrain": "true",
+  "save_predictions": "true",
+  "enable_feedback": "true"
+}

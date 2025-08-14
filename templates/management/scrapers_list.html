@@ -1,0 +1,1447 @@
+{% extends 'main/base.html' %}
+{% load tz %}
+
+{% block title %}Zarządzanie scraperami{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-robot me-2"></i>Zarządzanie scraperami</h1>
+    <div>
+        <button class="btn btn-info me-2" onclick="runStockScraper()">
+            <i class="fas fa-chart-line me-1"></i>Stock Scraper
+        </button>
+        <button class="btn btn-success" onclick="startAllScrapers()">
+            <i class="fas fa-play me-1"></i>Uruchom wszystkie
+        </button>
+        <button class="btn btn-warning" onclick="stopAllScrapers()">
+            <i class="fas fa-stop me-1"></i>Zatrzymaj wszystkie
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Wszystkie scrapery</h6>
+                        <h3 class="mb-0">{{ stats.total }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-robot fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Aktywne</h6>
+                        <h3 class="mb-0">{{ stats.active }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-play fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Do uruchomienia</h6>
+                        <h3 class="mb-0">{{ stats.due_now }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Błędy dzisiaj</h6>
+                        <h3 class="mb-0">{{ stats.errors_today }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="scraperTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="schedules-tab" data-bs-toggle="tab" 
+                data-bs-target="#schedules" type="button" role="tab">
+            <i class="fas fa-calendar-alt me-1"></i>Harmonogramy
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="sources-tab" data-bs-toggle="tab" 
+                data-bs-target="#sources" type="button" role="tab">
+            <i class="fas fa-database me-1"></i>Źródła danych
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="logs-tab" data-bs-toggle="tab" 
+                data-bs-target="#logs" type="button" role="tab">
+            <i class="fas fa-list-alt me-1"></i>Logi
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="scraperTabsContent">
+    <!-- Schedules Tab -->
+    <div class="tab-pane fade show active" id="schedules" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Harmonogramy scraperów</h5>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                        <i class="fas fa-plus me-1"></i>Dodaj harmonogram
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nazwa i typ</th>
+                                <th>Częstotliwość</th>
+                                <th>Status</th>
+                                <th>Ostatnie uruchomienie</th>
+                                <th>Następne uruchomienie</th>
+                                <th>Działania</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enhanced in enhanced_schedules %}
+                            {% with schedule=enhanced.schedule %}
+                            <tr class="{% if enhanced.is_executing %}table-primary{% elif enhanced.status == 'error' %}table-danger{% elif enhanced.status == 'due_now' %}table-warning{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            {% if enhanced.status == 'executing' %}
+                                                <i class="fas fa-spinner fa-spin text-primary"></i>
+                                            {% elif enhanced.status == 'running' %}
+                                                <i class="fas fa-play-circle text-success"></i>
+                                            {% elif enhanced.status == 'error' %}
+                                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                                            {% elif enhanced.status == 'due_now' %}
+                                                <i class="fas fa-clock text-warning"></i>
+                                            {% elif enhanced.status == 'inactive' %}
+                                                <i class="fas fa-pause-circle text-secondary"></i>
+                                            {% else %}
+                                                <i class="fas fa-circle text-info"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <strong>{{ schedule.name }}</strong>
+                                            <br><span class="badge bg-info">{{ schedule.get_scraper_type_display }}</span>
+                                            {% if enhanced.is_executing %}
+                                                <br><small class="text-primary"><i class="fas fa-spinner fa-spin"></i> Wykonywany</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code class="small">{{ schedule.frequency_description }}</code>
+                                    <br><small class="text-muted">{{ schedule.active_hours_start }} - {{ schedule.active_hours_end }}</small>
+                                    <br><small class="text-muted">{{ schedule.active_days|join:", " }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ enhanced.status_class }}">
+                                        {% if enhanced.status == 'executing' %}
+                                            Wykonywany
+                                        {% elif enhanced.status == 'running' %}
+                                            Aktywny
+                                        {% elif enhanced.status == 'due_now' %}
+                                            Do uruchomienia
+                                        {% elif enhanced.status == 'error' %}
+                                            Błąd
+                                        {% elif enhanced.status == 'inactive' %}
+                                            Nieaktywny
+                                        {% else %}
+                                            Bezczynny
+                                        {% endif %}
+                                    </span>
+                                    {% if schedule.failure_count > 0 %}
+                                        <br><small class="text-danger">Błędy: {{ schedule.failure_count }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if schedule.last_run %}
+                                        <div>{{ schedule.last_run|localtime|date:"d.m.Y H:i" }}</div>
+                                        {% if enhanced.time_since_last_run %}
+                                            <small class="text-muted">{{ enhanced.time_since_last_run }}</small>
+                                        {% endif %}
+                                        {% if enhanced.latest_execution %}
+                                            <br><small class="{% if enhanced.latest_execution.success %}text-success{% else %}text-danger{% endif %}">
+                                                {% if enhanced.latest_execution.success %}✅{% else %}❌{% endif %}
+                                                {% if enhanced.latest_execution.items_processed %}{{ enhanced.latest_execution.items_processed }} przetworzonych{% endif %}
+                                            </small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Nigdy</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if schedule.next_run %}
+                                        <div>{{ schedule.next_run|date:"d.m.Y H:i" }}</div>
+                                        {% if enhanced.next_run_in %}
+                                            <small class="text-muted">za {{ enhanced.next_run_in }}</small>
+                                        {% elif schedule.should_run_now %}
+                                            <small class="text-warning"><strong>TERAZ</strong></small>
+                                        {% else %}
+                                            <small class="text-muted">za {{ schedule.next_run|timeuntil }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Brak</span>
+                                    {% endif %}
+                                </td>
+                                <td class="table-actions">
+                                    <div class="btn-group-sm" role="group">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary run-scraper"
+                                                data-schedule-id="{{ schedule.id }}"
+                                                title="Uruchom teraz"
+                                                {% if enhanced.is_executing %}disabled{% endif %}>
+                                            {% if enhanced.is_executing %}
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                            {% else %}
+                                                <i class="fas fa-play"></i>
+                                            {% endif %}
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-{% if schedule.is_active %}warning{% else %}success{% endif %} toggle-schedule"
+                                                data-schedule-id="{{ schedule.id }}"
+                                                data-active="{{ schedule.is_active|yesno:'true,false' }}"
+                                                title="{% if schedule.is_active %}Wyłącz{% else %}Włącz{% endif %}">
+                                            <i class="fas fa-{% if schedule.is_active %}pause{% else %}play{% endif %}"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-info"
+                                                title="Szczegóły"
+                                                onclick="showScheduleDetails({{ schedule.id }})">
+                                            <i class="fas fa-info"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endwith %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-calendar fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted">Brak harmonogramów</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sources Tab -->
+    <div class="tab-pane fade" id="sources" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Źródła danych</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nazwa</th>
+                                <th>URL</th>
+                                <th>Typ</th>
+                                <th>Status</th>
+                                <th>Ostatnia aktywność</th>
+                                <th>Działania</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for source in sources %}
+                            <tr>
+                                <td>
+                                    <strong>{{ source.name }}</strong>
+                                    {% if source.description %}
+                                        <br><small class="text-muted">{{ source.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ source.base_url }}" target="_blank" class="text-decoration-none">
+                                        {{ source.base_url|truncatechars:40 }}
+                                        <i class="fas fa-external-link-alt fa-sm ms-1"></i>
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ source.source_type|capfirst }}</span>
+                                </td>
+                                <td>
+                                    {% if source.is_active %}
+                                        <span class="badge bg-success">Aktywne</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Nieaktywne</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if source.last_updated %}
+                                        {{ source.last_updated|date:"d.m.Y H:i" }}
+                                        <br><small class="text-muted">{{ source.last_updated|timesince }} temu</small>
+                                    {% else %}
+                                        <span class="text-muted">Brak</span>
+                                    {% endif %}
+                                </td>
+                                <td class="table-actions">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary test-source"
+                                            data-source-id="{{ source.id }}"
+                                            title="Testuj połączenie">
+                                        <i class="fas fa-plug"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-info"
+                                            title="Szczegóły">
+                                        <i class="fas fa-info"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-database fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted">Brak źródeł danych</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Tab -->
+    <div class="tab-pane fade" id="logs" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Logi scraperów</h5>
+                    <div class="d-flex gap-2">
+                        <button id="toggle-refresh" class="btn btn-outline-secondary btn-sm" onclick="toggleAutoRefresh()">
+                            🔄 Włącz auto-odświeżanie
+                        </button>
+                        <select class="form-select form-select-sm" style="width: auto;" onchange="filterLogs(this.value)">
+                            <option value="">Wszystkie</option>
+                            <option value="INFO">Info</option>
+                            <option value="WARNING">Ostrzeżenia</option>
+                            <option value="ERROR">Błędy</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Czas</th>
+                                <th>Scraper</th>
+                                <th>Status</th>
+                                <th>Wyniki</th>
+                                <th>Wiadomość</th>
+                                <th>Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-table-body">
+                            {% for log in recent_logs %}
+                            <tr data-level="{{ log.level }}">
+                                <td>
+                                    <strong>{{ log.created_at|date:"d.m H:i:s" }}</strong>
+                                    {% if log.execution.completed_at %}
+                                        <br><small class="text-muted">{{ log.execution.completed_at|date:"H:i:s" }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ log.scraper_name|default:"System" }}</span>
+                                    <br><small class="text-muted">{{ log.execution.schedule.scraper_type }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if log.level == 'ERROR' %}danger{% elif log.level == 'WARNING' %}warning{% elif log.level == 'SUCCESS' %}success{% else %}info{% endif %}">
+                                        {{ log.level }}
+                                    </span>
+                                    {% if not log.execution.completed_at %}
+                                        <br><small class="text-info">Uruchomiony</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if log.execution.items_processed > 0 %}
+                                        <span class="badge bg-success">{{ log.execution.items_processed }} przetworzono</span>
+                                        {% if log.execution.items_created > 0 %}
+                                            <br><span class="badge bg-primary">+{{ log.execution.items_created }} nowych</span>
+                                        {% endif %}
+                                        {% if log.execution.items_updated > 0 %}
+                                            <br><span class="badge bg-warning">~{{ log.execution.items_updated }} zaktualizowano</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="message-content">
+                                        {{ log.message|truncatechars:120 }}
+                                        {% if log.execution.error_message %}
+                                            <br><small class="text-danger">{{ log.execution.error_message|truncatechars:80 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if log.details %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-secondary show-details"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#logDetailsModal"
+                                                data-execution-id="{{ log.execution.pk }}"
+                                                data-details='{{ log.details|safe }}'
+                                                title="Pokaż szczegóły">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    {% endif %}
+                                    {% if log.execution.schedule.scraper_type == 'stock_prices' and log.execution.execution_details.successful > 0 %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary show-stocks"
+                                                data-execution-id="{{ log.execution.pk }}"
+                                                title="Pokaż akcje">
+                                            <i class="fas fa-chart-line"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="fas fa-list fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted">Brak logów</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Szczegóły wykonania scrapera</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Basic Info -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Informacje podstawowe</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>ID wykonania:</strong></td>
+                                <td><span id="exec-id">-</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Typ scrapera:</strong></td>
+                                <td><span id="exec-type">-</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td><span id="exec-status">-</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Czas trwania:</strong></td>
+                                <td><span id="exec-duration">-</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Statystyki</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Przetworzono:</strong></td>
+                                <td><span id="exec-processed">-</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Utworzono:</strong></td>
+                                <td><span id="exec-created">-</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Zaktualizowano:</strong></td>
+                                <td><span id="exec-updated">-</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Stock Prices Details -->
+                <div id="stocks-section" class="mb-3" style="display: none;">
+                    <h6>Przetworzone akcje</h6>
+                    <div id="successful-stocks" class="mb-2">
+                        <strong>Powodzenia:</strong>
+                        <div class="mt-1" id="success-list"></div>
+                    </div>
+                    <div id="failed-stocks" style="display: none;">
+                        <strong>Błędy:</strong>
+                        <div class="mt-1" id="failed-list"></div>
+                    </div>
+                </div>
+                
+                <!-- Error Details -->
+                <div id="error-section" class="mb-3" style="display: none;">
+                    <h6>Szczegóły błędu</h6>
+                    <div class="alert alert-danger">
+                        <pre id="error-message"></pre>
+                    </div>
+                </div>
+                
+                <!-- Raw Details -->
+                <div class="mb-3">
+                    <h6>Szczegóły techniczne</h6>
+                    <pre id="log-details-content" class="bg-light p-3 rounded" style="font-size: 0.85em; max-height: 300px; overflow-y: auto;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock List Modal -->
+<div class="modal fade" id="stockListModal" tabindex="-1">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Przetworzone akcje</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="stock-list-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Details Modal -->
+<div class="modal fade" id="scheduleDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Szczegóły schedulera</h5>
+                <div>
+                    <button type="button" class="btn btn-primary me-2" id="edit-schedule-btn" onclick="openEditScheduleModal()" style="display: none;">
+                        <i class="fas fa-edit"></i> Edytuj
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body" id="schedule-details-content">
+                <!-- Content will be loaded via AJAX -->
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Ładowanie...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Schedule Modal -->
+<div class="modal fade" id="editScheduleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edycja schedulera</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-schedule-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_name" class="form-label">Nazwa</label>
+                                <input type="text" class="form-control" id="edit_name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_scraper_type" class="form-label">Typ scrapera</label>
+                                <select class="form-control" id="edit_scraper_type" name="scraper_type" required>
+                                    <option value="news_rss">News RSS Feeds</option>
+                                    <option value="stock_prices">Stock Prices</option>
+                                    <option value="calendar_events">Calendar Events</option>
+                                    <option value="espi_reports">ESPI Reports</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_is_active" name="is_active">
+                                    <label class="form-check-label" for="edit_is_active">
+                                        Aktywny
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_frequency_value" class="form-label">Częstotliwość</label>
+                                <input type="number" class="form-control" id="edit_frequency_value" name="frequency_value" min="1" max="1440" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="edit_frequency_unit" class="form-label">Jednostka</label>
+                                <select class="form-control" id="edit_frequency_unit" name="frequency_unit" required>
+                                    <option value="minutes">Minuty</option>
+                                    <option value="hours">Godziny</option>
+                                    <option value="days">Dni</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_active_hours_start" class="form-label">Początek aktywności</label>
+                                <input type="time" class="form-control" id="edit_active_hours_start" name="active_hours_start" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="edit_active_hours_end" class="form-label">Koniec aktywności</label>
+                                <input type="time" class="form-control" id="edit_active_hours_end" name="active_hours_end" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dni tygodnia</label>
+                        <div class="row">
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_monday" name="monday">
+                                    <label class="form-check-label" for="edit_monday">Poniedziałek</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_tuesday" name="tuesday">
+                                    <label class="form-check-label" for="edit_tuesday">Wtorek</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_wednesday" name="wednesday">
+                                    <label class="form-check-label" for="edit_wednesday">Środa</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_thursday" name="thursday">
+                                    <label class="form-check-label" for="edit_thursday">Czwartek</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_friday" name="friday">
+                                    <label class="form-check-label" for="edit_friday">Piątek</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_saturday" name="saturday">
+                                    <label class="form-check-label" for="edit_saturday">Sobota</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_sunday" name="sunday">
+                                    <label class="form-check-label" for="edit_sunday">Niedziela</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_skip_polish_holidays" name="skip_polish_holidays">
+                                    <label class="form-check-label" for="edit_skip_polish_holidays">
+                                        Pomiń polskie święta
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="edit_skip_gpw_holidays" name="skip_gpw_holidays">
+                                    <label class="form-check-label" for="edit_skip_gpw_holidays">
+                                        Pomiń święta GPW
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edit_max_retries" class="form-label">Max powtórzeń</label>
+                                <input type="number" class="form-control" id="edit_max_retries" name="max_retries" min="0" max="10" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edit_retry_delay_minutes" class="form-label">Opóźnienie (min)</label>
+                                <input type="number" class="form-control" id="edit_retry_delay_minutes" name="retry_delay_minutes" min="1" max="60" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="edit_timeout_minutes" class="form-label">Timeout (min)</label>
+                                <input type="number" class="form-control" id="edit_timeout_minutes" name="timeout_minutes" min="1" max="120" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="saveScheduleChanges()">
+                    <i class="fas fa-save"></i> Zapisz zmiany
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh variables
+let autoRefreshLogs = false;
+
+// CSRF Token helper function
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+           document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+}
+
+// Show schedule details function
+function showScheduleDetails(scheduleId) {
+    const modal = document.getElementById('scheduleDetailsModal');
+    const content = document.getElementById('schedule-details-content');
+    
+    // Show loading state
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Ładowanie...</span>
+            </div>
+        </div>
+    `;
+    
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    // Fetch schedule details
+    fetch(`/users/management/scrapers/${scheduleId}/details/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const schedule = data.data;
+            const daysActive = Object.entries(schedule.days)
+                .filter(([day, active]) => active)
+                .map(([day, _]) => day.charAt(0).toUpperCase() + day.slice(1))
+                .join(', ');
+            
+            // Store schedule data for editing
+            window.currentScheduleData = schedule;
+            
+            // Show edit button
+            document.getElementById('edit-schedule-btn').style.display = 'inline-block';
+            
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-cog"></i> Podstawowe informacje</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Nazwa:</strong></td><td>${schedule.name}</td></tr>
+                            <tr><td><strong>Typ:</strong></td><td>${schedule.scraper_type_display}</td></tr>
+                            <tr><td><strong>Status:</strong></td><td>
+                                <span class="badge ${schedule.is_active ? 'bg-success' : 'bg-danger'}">
+                                    ${schedule.is_active ? 'Aktywny' : 'Nieaktywny'}
+                                </span>
+                            </td></tr>
+                            <tr><td><strong>Częstotliwość:</strong></td><td>${schedule.frequency_description}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-clock"></i> Godziny pracy</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Początek:</strong></td><td>${schedule.active_hours_start}</td></tr>
+                            <tr><td><strong>Koniec:</strong></td><td>${schedule.active_hours_end}</td></tr>
+                            <tr><td><strong>Dni tygodnia:</strong></td><td>${daysActive}</td></tr>
+                            <tr><td><strong>Pomiń święta PL:</strong></td><td>${schedule.skip_polish_holidays ? 'Tak' : 'Nie'}</td></tr>
+                            <tr><td><strong>Pomiń święta GPW:</strong></td><td>${schedule.skip_gpw_holidays ? 'Tak' : 'Nie'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-history"></i> Historia wykonania</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Ostatnie uruchomienie:</strong></td><td>${schedule.last_run}</td></tr>
+                            <tr><td><strong>Ostatni sukces:</strong></td><td>${schedule.last_success}</td></tr>
+                            <tr><td><strong>Następne uruchomienie:</strong></td><td>${schedule.next_run}</td></tr>
+                            <tr><td><strong>Liczba błędów:</strong></td><td>
+                                <span class="badge ${schedule.failure_count > 0 ? 'bg-warning' : 'bg-success'}">
+                                    ${schedule.failure_count}
+                                </span>
+                            </td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-tools"></i> Ustawienia techniczne</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Max powtórzeń:</strong></td><td>${schedule.max_retries}</td></tr>
+                            <tr><td><strong>Opóźnienie (min):</strong></td><td>${schedule.retry_delay_minutes}</td></tr>
+                            <tr><td><strong>Timeout (min):</strong></td><td>${schedule.timeout_minutes}</td></tr>
+                            <tr><td><strong>Utworzono:</strong></td><td>${schedule.created_at}</td></tr>
+                            <tr><td><strong>Aktualizowano:</strong></td><td>${schedule.updated_at}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                
+                ${Object.keys(schedule.scraper_config).length > 0 ? `
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6><i class="fas fa-code"></i> Konfiguracja scrapera</h6>
+                        <pre class="bg-light p-3 rounded small">${JSON.stringify(schedule.scraper_config, null, 2)}</pre>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+        } else {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Błąd podczas ładowania szczegółów: ${data.error || 'Nieznany błąd'}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                Błąd połączenia: ${error.message}
+            </div>
+        `;
+    });
+}
+
+// Open edit schedule modal
+function openEditScheduleModal() {
+    if (!window.currentScheduleData) {
+        showToast('Brak danych do edycji', 'error');
+        return;
+    }
+    
+    const schedule = window.currentScheduleData;
+    
+    // Fill form with current data
+    document.getElementById('edit_name').value = schedule.name;
+    document.getElementById('edit_scraper_type').value = schedule.scraper_type;
+    document.getElementById('edit_is_active').checked = schedule.is_active;
+    document.getElementById('edit_frequency_value').value = schedule.frequency_value;
+    document.getElementById('edit_frequency_unit').value = schedule.frequency_unit;
+    document.getElementById('edit_active_hours_start').value = schedule.active_hours_start;
+    document.getElementById('edit_active_hours_end').value = schedule.active_hours_end;
+    document.getElementById('edit_max_retries').value = schedule.max_retries;
+    document.getElementById('edit_retry_delay_minutes').value = schedule.retry_delay_minutes;
+    document.getElementById('edit_timeout_minutes').value = schedule.timeout_minutes;
+    document.getElementById('edit_skip_polish_holidays').checked = schedule.skip_polish_holidays;
+    document.getElementById('edit_skip_gpw_holidays').checked = schedule.skip_gpw_holidays;
+    
+    // Fill days
+    document.getElementById('edit_monday').checked = schedule.days.monday || false;
+    document.getElementById('edit_tuesday').checked = schedule.days.tuesday || false;
+    document.getElementById('edit_wednesday').checked = schedule.days.wednesday || false;
+    document.getElementById('edit_thursday').checked = schedule.days.thursday || false;
+    document.getElementById('edit_friday').checked = schedule.days.friday || false;
+    document.getElementById('edit_saturday').checked = schedule.days.saturday || false;
+    document.getElementById('edit_sunday').checked = schedule.days.sunday || false;
+    
+    // Hide details modal and show edit modal
+    const detailsModal = bootstrap.Modal.getInstance(document.getElementById('scheduleDetailsModal'));
+    detailsModal.hide();
+    
+    const editModal = new bootstrap.Modal(document.getElementById('editScheduleModal'));
+    editModal.show();
+}
+
+// Save schedule changes
+function saveScheduleChanges() {
+    if (!window.currentScheduleData) {
+        showToast('Brak danych do zapisania', 'error');
+        return;
+    }
+    
+    const form = document.getElementById('edit-schedule-form');
+    const formData = new FormData(form);
+    
+    // Convert FormData to JSON
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key === 'is_active' || key === 'skip_polish_holidays' || key === 'skip_gpw_holidays' || 
+            key === 'monday' || key === 'tuesday' || key === 'wednesday' || key === 'thursday' || 
+            key === 'friday' || key === 'saturday' || key === 'sunday') {
+            data[key] = true; // checkbox is checked if it's in FormData
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Add unchecked checkboxes as false
+    const checkboxFields = ['is_active', 'skip_polish_holidays', 'skip_gpw_holidays', 
+                           'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    checkboxFields.forEach(field => {
+        if (!(field in data)) {
+            data[field] = false;
+        }
+    });
+    
+    // Save to server
+    fetch(`/users/management/scrapers/${window.currentScheduleData.id}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('Scheduler został zaktualizowany', 'success');
+            
+            // Close edit modal
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editScheduleModal'));
+            editModal.hide();
+            
+            // Refresh page to show updated data
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast('Błąd podczas aktualizacji: ' + (result.error || 'Nieznany błąd'), 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia: ' + error.message, 'error');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Run scraper functionality
+    document.querySelectorAll('.run-scraper').forEach(button => {
+        button.addEventListener('click', function() {
+            const scheduleId = this.dataset.scheduleId;
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            fetch(`/users/management/scrapers/${scheduleId}/run/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Scraper został uruchomiony', 'success');
+                } else {
+                    showToast('Błąd podczas uruchamiania scrapera', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Błąd połączenia', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-play"></i>';
+            });
+        });
+    });
+
+    // Toggle schedule functionality
+    document.querySelectorAll('.toggle-schedule').forEach(button => {
+        button.addEventListener('click', function() {
+            const scheduleId = this.dataset.scheduleId;
+            const isActive = this.dataset.active === 'true';
+            
+            fetch(`/users/management/scrapers/${scheduleId}/toggle/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button
+                    this.dataset.active = data.is_active ? 'true' : 'false';
+                    this.className = `btn btn-sm btn-outline-${data.is_active ? 'warning' : 'success'} toggle-schedule`;
+                    this.innerHTML = `<i class="fas fa-${data.is_active ? 'pause' : 'play'}"></i>`;
+                    this.title = data.is_active ? 'Wyłącz' : 'Włącz';
+                    
+                    // Update status badge
+                    const row = this.closest('tr');
+                    const badge = row.querySelector('.status-badge');
+                    badge.className = `badge status-badge ${data.is_active ? 'bg-success' : 'bg-danger'}`;
+                    badge.textContent = data.is_active ? 'Aktywny' : 'Nieaktywny';
+                    
+                    showToast(data.message, 'success');
+                } else {
+                    showToast('Błąd podczas zmiany statusu', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Błąd połączenia', 'error');
+            });
+        });
+    });
+
+    // Test source functionality
+    document.querySelectorAll('.test-source').forEach(button => {
+        button.addEventListener('click', function() {
+            const sourceId = this.dataset.sourceId;
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            fetch(`/users/management/scrapers/test-source/${sourceId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(`Test połączenia: ${data.message}`, data.connection_ok ? 'success' : 'warning');
+                } else {
+                    showToast('Błąd podczas testowania połączenia', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Błąd połączenia', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-plug"></i>';
+            });
+        });
+    });
+
+    // Show log details
+    document.querySelectorAll('.show-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const details = this.dataset.details;
+            document.getElementById('log-details-content').textContent = details;
+            new bootstrap.Modal(document.getElementById('logDetailsModal')).show();
+        });
+    });
+});
+
+// Toggle auto-refresh for logs
+function toggleAutoRefresh() {
+    autoRefreshLogs = !autoRefreshLogs;
+    const button = document.getElementById('toggle-refresh');
+    
+    if (autoRefreshLogs) {
+        button.innerHTML = '⏸️ Zatrzymaj auto-odświeżanie';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-warning');
+        
+        // Clear existing interval if any
+        if (logsRefreshInterval) {
+            clearInterval(logsRefreshInterval);
+        }
+        
+        // Refresh immediately and then every 5 seconds
+        refreshLogs();
+        logsRefreshInterval = setInterval(refreshLogs, 5000);
+    } else {
+        button.innerHTML = '🔄 Włącz auto-odświeżanie';
+        button.classList.remove('btn-warning');
+        button.classList.add('btn-outline-secondary');
+        
+        if (logsRefreshInterval) {
+            clearInterval(logsRefreshInterval);
+        }
+    }
+}
+
+function startAllScrapers() {
+    if (!confirm('Czy na pewno chcesz uruchomić wszystkie scrapery?')) return;
+    
+    fetch('/users/management/scrapers/start-all/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Uruchomiono ${data.count} scraperów`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Błąd podczas uruchamiania scraperów', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia', 'error');
+    });
+}
+
+function stopAllScrapers() {
+    if (!confirm('Czy na pewno chcesz zatrzymać wszystkie scrapery?')) return;
+    
+    fetch('/users/management/scrapers/stop-all/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Zatrzymano ${data.count} scraperów`, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Błąd podczas zatrzymywania scraperów', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia', 'error');
+    });
+}
+
+function runStockScraper() {
+    if (!confirm('Uruchomić scraper danych giełdowych dla wszystkich spółek?')) return;
+    
+    showToast('Uruchamianie stock scrapera...', 'info');
+    
+    fetch('/users/management/scrapers/run-stock-scraper/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(`Stock scraper: ${data.successful} udanych, ${data.failed} błędnych (${data.duration})`, 'success');
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            showToast(`Błąd stock scrapera: ${data.error}`, 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia z stock scraperem', 'error');
+    });
+}
+
+function filterLogs(level) {
+    const rows = document.querySelectorAll('#logs-table-body tr[data-level]');
+    rows.forEach(row => {
+        if (!level || row.dataset.level === level) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Auto-refresh logs every 10 seconds
+let logsRefreshInterval;
+
+function refreshLogs() {
+    fetch('/users/management/scrapers/refresh-logs/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.logs) {
+            const tableBody = document.getElementById('logs-table-body');
+            if (tableBody) {
+                tableBody.innerHTML = '';
+                
+                data.logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.setAttribute('data-level', log.level);
+                    
+                    let badgeClass = 'success';
+                    if (log.level === 'ERROR') badgeClass = 'danger';
+                    else if (log.level === 'WARNING') badgeClass = 'warning';
+                    else if (log.level === 'INFO') badgeClass = 'info';
+                    
+                    row.innerHTML = `
+                        <td><strong>${log.created_at}</strong></td>
+                        <td><span class="badge bg-info">${log.scraper_name || 'System'}</span></td>
+                        <td><span class="badge bg-${badgeClass}">${log.level}</span></td>
+                        <td>${log.message}</td>
+                        <td>
+                            ${log.details ? 
+                                `<button type="button" class="btn btn-sm btn-outline-secondary show-details" data-details="${JSON.stringify(log.details).replace(/"/g, '&quot;')}" title="Pokaż szczegóły">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>` : '-'
+                            }
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // Re-attach event listeners for detail buttons
+                attachDetailButtonListeners();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error refreshing logs:', error);
+    });
+}
+
+function attachDetailButtonListeners() {
+    document.querySelectorAll('.show-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const details = this.getAttribute('data-details');
+            try {
+                const parsedDetails = JSON.parse(details);
+                const formattedDetails = JSON.stringify(parsedDetails, null, 2);
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Szczegóły logu</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <pre class="bg-light p-3 rounded">${formattedDetails}</pre>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+                
+                modal.addEventListener('hidden.bs.modal', () => {
+                    modal.remove();
+                });
+            } catch (e) {
+                alert('Nie można wyświetlić szczegółów');
+            }
+        });
+    });
+}
+
+// Start auto-refresh when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial refresh
+    refreshLogs();
+    
+    // Set up interval for auto-refresh
+    logsRefreshInterval = setInterval(refreshLogs, 10000); // Every 10 seconds
+    
+    // Attach initial event listeners
+    attachDetailButtonListeners();
+});
+
+// Stop refresh when user navigates away
+window.addEventListener('beforeunload', function() {
+    if (logsRefreshInterval) {
+        clearInterval(logsRefreshInterval);
+    }
+});
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : type === 'info' ? 'info' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// Enhanced log details modal
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle log details modal
+    const logDetailsModal = document.getElementById('logDetailsModal');
+    if (logDetailsModal) {
+        logDetailsModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const details = JSON.parse(button.getAttribute('data-details'));
+            
+            // Fill basic info
+            document.getElementById('exec-id').textContent = details.execution_pk || '-';
+            document.getElementById('exec-type').textContent = details.schedule_type || '-';
+            document.getElementById('exec-status').innerHTML = details.success 
+                ? '<span class="badge bg-success">Sukces</span>' 
+                : '<span class="badge bg-danger">Błąd</span>';
+            document.getElementById('exec-duration').textContent = details.duration || '-';
+            
+            // Fill statistics
+            document.getElementById('exec-processed').textContent = details.items_processed || 0;
+            document.getElementById('exec-created').textContent = details.items_created || 0;
+            document.getElementById('exec-updated').textContent = details.items_updated || 0;
+            
+            // Handle stock prices specific info
+            const stocksSection = document.getElementById('stocks-section');
+            const successList = document.getElementById('success-list');
+            const failedList = document.getElementById('failed-list');
+            const failedSection = document.getElementById('failed-stocks');
+            
+            if (details.schedule_type === 'stock_prices' && details.raw_details) {
+                stocksSection.style.display = 'block';
+                
+                // Extract stock symbols from command_output
+                const commandOutput = details.raw_details.command_output || '';
+                let stockSymbols = [];
+                
+                if (commandOutput.includes('Successful:')) {
+                    const match = commandOutput.match(/Successful: \d+ stocks \[(.*?)\]/);
+                    if (match) {
+                        stockSymbols = match[1].split(',').map(s => s.trim().replace(/['"]/g, ''));
+                    }
+                }
+                
+                // Successful stocks
+                if (stockSymbols.length > 0) {
+                    successList.innerHTML = stockSymbols.map(stock => 
+                        `<span class="badge bg-success me-1">${stock}</span>`
+                    ).join('');
+                } else if (details.raw_details.successful > 0) {
+                    successList.innerHTML = `<span class="badge bg-success">${details.raw_details.successful} akcji</span>`;
+                } else {
+                    successList.innerHTML = '<span class="text-muted">Brak</span>';
+                }
+                
+                // Failed stocks
+                if (details.raw_details.failed > 0) {
+                    failedSection.style.display = 'block';
+                    failedList.innerHTML = `<span class="badge bg-danger">${details.raw_details.failed} błędów</span>`;
+                } else {
+                    failedSection.style.display = 'none';
+                }
+            } else {
+                stocksSection.style.display = 'none';
+            }
+            
+            // Handle errors
+            const errorSection = document.getElementById('error-section');
+            const errorMessage = document.getElementById('error-message');
+            
+            if (!details.success && details.error_message) {
+                errorSection.style.display = 'block';
+                errorMessage.textContent = details.error_message;
+            } else {
+                errorSection.style.display = 'none';
+            }
+            
+            // Show raw details
+            document.getElementById('log-details-content').textContent = 
+                JSON.stringify(details.raw_details, null, 2);
+        });
+    }
+    
+    // Handle stock list modal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.show-stocks')) {
+            const button = e.target.closest('.show-stocks');
+            const executionId = button.getAttribute('data-execution-id');
+            
+            // For now, show a simple message - could be enhanced to fetch details via AJAX
+            const stockListContent = document.getElementById('stock-list-content');
+            stockListContent.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-chart-line fa-2x text-primary mb-3"></i>
+                    <p>Szczegóły akcji dla wykonania #${executionId}</p>
+                    <p class="text-muted">Zobacz szczegóły w głównym modal.</p>
+                </div>
+            `;
+            
+            new bootstrap.Modal(document.getElementById('stockListModal')).show();
+        }
+    });
+});
+</script>
+{% endblock %}

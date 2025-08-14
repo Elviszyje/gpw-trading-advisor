@@ -1,0 +1,34 @@
+🚨 Price Alert Triggered
+
+Hello {{ user.first_name|default:user.username }},
+
+Your price alert for {{ stock_symbol }} has been triggered!
+
+Alert Details:
+- Stock: {{ stock_symbol }}
+- Alert Type: {{ alert_type|title }}
+- Threshold: {{ threshold }} PLN
+- Current Price: {{ current_price }} PLN
+- Triggered: {{ timestamp|date:"Y-m-d H:i:s" }}
+
+{% if alert_type == 'price_above' %}
+📈 The stock price has risen above your set threshold of {{ threshold }} PLN.
+{% elif alert_type == 'price_below' %}
+📉 The stock price has fallen below your set threshold of {{ threshold }} PLN.
+{% elif alert_type == 'volume_spike' %}
+📊 Unusual volume activity detected. Volume has exceeded your threshold.
+{% endif %}
+
+What you can do next:
+- Review your investment strategy for this stock
+- Consider if this is a good time to buy, sell, or hold
+- Check recent news that might explain the price movement
+- Update your alert thresholds if needed
+
+Remember: This alert is based on your predefined criteria. Always conduct your own analysis before making investment decisions.
+
+Best regards,
+{{ site_name }} Team
+
+---
+This alert was sent to {{ user.email }}. To manage your price alerts, please log in to your account.

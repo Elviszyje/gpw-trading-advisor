@@ -1,0 +1,19 @@
+🚨 *Price Alert* \- {{ stock_symbol }}
+
+{% if alert_type == 'price_above' %}📈 *Price Above Threshold*{% elif alert_type == 'price_below' %}📉 *Price Below Threshold*{% else %}📊 *{{ alert_type|title }}*{% endif %}
+
+*Threshold:* {{ threshold }} PLN
+*Current:* {{ current_price }} PLN
+*Time:* {{ timestamp|date:"H:i" }}
+
+{% if alert_type == 'price_above' %}Stock rose above your threshold{% elif alert_type == 'price_below' %}Stock fell below your threshold{% else %}Alert condition met{% endif %}
+
+💡 *Actions:*
+• Review strategy
+• Check news
+• Consider buy/sell/hold
+
+⚠️ Always do your own analysis
+
+\-\-\-
+{{ site_name }}

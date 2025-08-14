@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Price Alert</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .alert-box { background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .alert-above { background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-below { background-color: #f8d7da; border-color: #f5c6cb; }
+        .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .details-table th, .details-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        .details-table th { background-color: #f8f9fa; font-weight: bold; }
+        .price-change { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .price-up { color: #28a745; }
+        .price-down { color: #dc3545; }
+        .action-box { background-color: #e3f2fd; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Price Alert Triggered</h1>
+            <p>{{ stock_symbol }}</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{ user.first_name|default:user.username }}</strong>,</p>
+            
+            <p>Your price alert for <strong>{{ stock_symbol }}</strong> has been triggered!</p>
+            
+            <div class="alert-box {% if alert_type == 'price_above' %}alert-above{% elif alert_type == 'price_below' %}alert-below{% endif %}">
+                <h3>📊 Alert Details</h3>
+                <table class="details-table">
+                    <tr>
+                        <th>Stock Symbol</th>
+                        <td><strong>{{ stock_symbol }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Alert Type</th>
+                        <td>{{ alert_type|title }}</td>
+                    </tr>
+                    <tr>
+                        <th>Your Threshold</th>
+                        <td>{{ threshold }} PLN</td>
+                    </tr>
+                    <tr>
+                        <th>Current Price</th>
+                        <td>
+                            <span class="price-change {% if current_price > threshold %}price-up{% else %}price-down{% endif %}">
+                                {{ current_price }} PLN
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Triggered Time</th>
+                        <td>{{ timestamp|date:"Y-m-d H:i:s" }}</td>
+                    </tr>
+                </table>
+                
+                {% if alert_type == 'price_above' %}
+                <p><strong>📈 Price Breakthrough:</strong> The stock price has risen above your set threshold of {{ threshold }} PLN.</p>
+                {% elif alert_type == 'price_below' %}
+                <p><strong>📉 Price Drop Alert:</strong> The stock price has fallen below your set threshold of {{ threshold }} PLN.</p>
+                {% elif alert_type == 'volume_spike' %}
+                <p><strong>📊 Volume Spike:</strong> Unusual volume activity detected. Volume has exceeded your threshold.</p>
+                {% endif %}
+            </div>
+            
+            <div class="action-box">
+                <h3>💡 What You Can Do Next</h3>
+                <ul>
+                    <li><strong>Review Strategy:</strong> Consider your investment strategy for this stock</li>
+                    <li><strong>Analyze Movement:</strong> Check recent news that might explain the price movement</li>
+                    <li><strong>Make Decision:</strong> Determine if this is a good time to buy, sell, or hold</li>
+                    <li><strong>Update Alerts:</strong> Consider adjusting your alert thresholds if needed</li>
+                </ul>
+            </div>
+            
+            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <strong>⚠️ Remember:</strong> This alert is based on your predefined criteria. Always conduct your own analysis and consider market conditions before making investment decisions.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{ site_name }}</strong></p>
+            <p>This alert was sent to {{ user.email }}.</p>
+            <p>To manage your price alerts, please log in to your account.</p>
+        </div>
+    </div>
+</body>
+</html>

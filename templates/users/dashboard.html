@@ -1,0 +1,272 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - GPW Trading Advisor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .stats-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #0d6efd;
+    }
+    .stats-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+    .stock-item {
+        padding: 1rem;
+        border-radius: 8px;
+        background: #f8f9fa;
+        margin-bottom: 0.5rem;
+        border-left: 4px solid #28a745;
+    }
+    .price-up { color: #28a745; }
+    .price-down { color: #dc3545; }
+    .price-neutral { color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Card -->
+<div class="welcome-card">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h3>Welcome to GPW2 Trading Intelligence!</h3>
+            <p class="mb-0">Your comprehensive platform for Polish stock market analysis and insights.</p>
+            {% if profile_completion < 100 %}
+                <div class="mt-3">
+                    <small>Profile completion: {{ profile_completion }}%</small>
+                    <div class="progress mt-1" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: {{ profile_completion }}%"></div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-md-4 text-end">
+            <i class="fas fa-chart-line fa-4x opacity-25"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon bg-primary me-3">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ total_companies }}</h4>
+                    <small class="text-muted">Tracked Companies</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon bg-success me-3">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ active_stocks }}</h4>
+                    <small class="text-muted">Active Stocks</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon bg-warning me-3">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ unread_alerts_count }}</h4>
+                    <small class="text-muted">Unread Alerts</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="stats-card">
+            <div class="d-flex align-items-center">
+                <div class="stats-icon bg-info me-3">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ recent_executions_count }}</h4>
+                    <small class="text-muted">Recent Updates</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Live Stock Data -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Live Stock Prices
+                </h5>
+                <small class="text-muted">Last updated: {{ last_update|date:"H:i:s" }}</small>
+            </div>
+            <div class="card-body">
+                {% if stock_data %}
+                    {% for stock in stock_data %}
+                        <div class="stock-item">
+                            <div class="row align-items-center">
+                                <div class="col-md-3">
+                                    <strong>{{ stock.company__symbol }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ stock.company__name|truncatechars:30 }}</small>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <span class="h5 price-up">{{ stock.price|floatformat:2 }} PLN</span>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <span class="badge bg-light text-dark">
+                                        Vol: {{ stock.volume|floatformat:0 }}
+                                    </span>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <small class="text-muted">{{ stock.timestamp|date:"H:i" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No stock data available yet. Data collection in progress...</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Status -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-server me-2"></i>
+                    System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Scraper Status</span>
+                        <span class="badge {% if scheduler_status %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if scheduler_status %}Running{% else %}Stopped{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Last Execution</span>
+                        <small class="text-muted">
+                            {% if last_execution %}
+                                {{ last_execution|timesince }} ago
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Success Rate</span>
+                        <span class="badge bg-info">{{ success_rate|floatformat:1 }}%</span>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <h6 class="mb-3">Recent Activity</h6>
+                {% if recent_executions %}
+                    {% for execution in recent_executions %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small>{{ execution.created_at|date:"H:i" }}</small>
+                            <span class="badge {% if execution.success %}bg-success{% else %}bg-danger{% endif %}">
+                                {% if execution.success %}success{% else %}error{% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small">No recent activity</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'users:companies_list' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-building me-2"></i>
+                            Manage Companies
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'analysis:ml_dashboard' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-brain me-2"></i>
+                            ML Analysis
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'users:alerts' %}" class="btn btn-outline-warning w-100">
+                            <i class="fas fa-bell me-2"></i>
+                            View Alerts
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'users:system_status' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            System Status
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

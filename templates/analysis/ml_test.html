@@ -1,0 +1,345 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Test ML API - GPW Trading Advisor{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-4">
+                <i class="fas fa-vial me-2"></i>
+                Test ML API
+            </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Test Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-play me-2"></i>
+                        Test Predykcji
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="testForm">
+                        <div class="mb-3">
+                            <label class="form-label">Wybierz akcję:</label>
+                            <select class="form-select" id="stockSelect" required>
+                                <option value="">-- Wybierz akcję --</option>
+                                {% for stock in stocks %}
+                                <option value="{{ stock.symbol }}">{{ stock.symbol }} - {{ stock.company_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Sesja:</label>
+                            <select class="form-select" id="sessionSelect" required>
+                                <option value="">-- Wybierz sesję --</option>
+                                {% for session in sessions %}
+                                <option value="{{ session.id }}">{{ session.date }} (ID: {{ session.id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-magic me-2"></i>
+                                Generuj Predykcję
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">Szybkie Akcje</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info" id="quickPredictBtn">
+                            <i class="fas fa-bolt me-2"></i>
+                            Losowa Predykcja
+                        </button>
+                        <button class="btn btn-outline-secondary" id="testTrainingBtn">
+                            <i class="fas fa-cog me-2"></i>
+                            Test Trenowania
+                        </button>
+                        <button class="btn btn-outline-warning" id="configTestBtn">
+                            <i class="fas fa-wrench me-2"></i>
+                            Test Konfiguracji
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Wyniki
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="resultsContainer">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                            <p>Wykonaj test aby zobaczyć wyniki</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-terminal me-2"></i>
+                        Konsola
+                    </h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="bg-dark text-light p-3" style="height: 250px; overflow-y: auto; font-family: monospace; font-size: 0.9rem;" id="console">
+                        <div class="text-success">[{{ now|date:"H:i:s" }}] Konsola testowa ML API gotowa</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const console = document.getElementById('console');
+    
+    function addLog(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const colors = {
+            'info': 'text-info',
+            'success': 'text-success',
+            'warning': 'text-warning',
+            'error': 'text-danger'
+        };
+        
+        const logEntry = document.createElement('div');
+        logEntry.className = colors[type] || 'text-light';
+        logEntry.innerHTML = `[${timestamp}] ${message}`;
+        console.appendChild(logEntry);
+        console.scrollTop = console.scrollHeight;
+    }
+
+    function displayResults(data) {
+        const container = document.getElementById('resultsContainer');
+        
+        if (data.error) {
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Błąd: ${data.error}
+                </div>
+            `;
+            return;
+        }
+
+        const confidence = Math.round(data.confidence * 100);
+        const changePercent = data.predicted_change_percent.toFixed(2);
+        const changeClass = changePercent > 0 ? 'text-success' : 'text-danger';
+        const changeIcon = changePercent > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+
+        container.innerHTML = `
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Cena Aktualna</h6>
+                            <h4 class="text-primary">${data.current_price.toFixed(2)} PLN</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Predykcja</h6>
+                            <h4 class="text-info">${data.predicted_price.toFixed(2)} PLN</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Zmiana</h6>
+                            <h4 class="${changeClass}">
+                                <i class="fas ${changeIcon} me-2"></i>
+                                ${changePercent}%
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Pewność</h6>
+                            <h4 class="text-warning">${confidence}%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            ${data.prediction_factors ? `
+            <hr>
+            <div class="mt-3">
+                <h6>Analiza Czynników:</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">Techniczne:</small>
+                        <ul class="list-unstyled small">
+                            <li>Momentum: ${(data.prediction_factors.technical.momentum * 100).toFixed(2)}%</li>
+                            <li>Wolumen: ${data.prediction_factors.technical.volume_ratio.toFixed(2)}x</li>
+                            <li>Pozycja w zakresie: ${(data.prediction_factors.technical.price_range_position * 100).toFixed(0)}%</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">Fundamentalne:</small>
+                        <ul class="list-unstyled small">
+                            <li>Sentyment newsów: ${data.prediction_factors.news.sentiment_score.toFixed(2)}</li>
+                            <li>Wydarzenia: ${data.prediction_factors.calendar.major_event_proximity.toFixed(2)}</li>
+                            <li>Sektor: ${data.prediction_factors.market.sector_performance.toFixed(2)}</li>
+                        </ul>
+                    </div>
+                </div>
+                ${data.prediction_factors.dominant_factors && data.prediction_factors.dominant_factors.length > 0 ? `
+                <div class="mt-2">
+                    <small class="text-muted">Dominujące czynniki:</small>
+                    <div class="mt-1">
+                        ${data.prediction_factors.dominant_factors.map(factor => 
+                            `<span class="badge bg-primary me-1">${factor}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+            
+            <div class="mt-3">
+                <small class="text-muted">
+                    Model: ${data.model_type} | Cechy: ${data.features_used} | Horyzont: ${data.horizon_hours}h
+                </small>
+            </div>
+        `;
+    }
+
+    // Test form submission
+    document.getElementById('testForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const stock = document.getElementById('stockSelect').value;
+        const session = document.getElementById('sessionSelect').value;
+        
+        if (!stock || !session) {
+            addLog('Wybierz akcję i sesję', 'warning');
+            return;
+        }
+
+        addLog(`Rozpoczynam predykcję dla ${stock} sesja ${session}...`, 'info');
+        
+        fetch(`/analysis/api/ml/predict/?stock=${stock}&session=${session}`)
+            .then(response => response.json())
+            .then(data => {
+                addLog('Predykcja zakończona pomyślnie', 'success');
+                displayResults(data);
+            })
+            .catch(error => {
+                addLog(`Błąd: ${error.message}`, 'error');
+            });
+    });
+
+    // Quick predict button
+    document.getElementById('quickPredictBtn').addEventListener('click', function() {
+        addLog('Wykonuję szybką predykcję...', 'info');
+        
+        fetch('/analysis/api/ml/quick-predict/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    addLog(`Predykcja dla ${data.stock}: ${data.prediction.predicted_change_percent.toFixed(2)}%`, 'success');
+                    displayResults(data.prediction);
+                } else {
+                    addLog(`Błąd: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                addLog(`Błąd komunikacji: ${error.message}`, 'error');
+            });
+    });
+
+    // Test training button
+    document.getElementById('testTrainingBtn').addEventListener('click', function() {
+        addLog('Test rozpoczęcia trenowania...', 'info');
+        
+        fetch('/analysis/api/ml/train/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'model_type': 'price_predictor',
+                'force_retrain': false
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'started') {
+                addLog('Trenowanie rozpoczęte w tle', 'success');
+            } else {
+                addLog(`Status: ${data.status}`, 'info');
+            }
+        })
+        .catch(error => {
+            addLog(`Błąd: ${error.message}`, 'error');
+        });
+    });
+
+    // Config test button
+    document.getElementById('configTestBtn').addEventListener('click', function() {
+        addLog('Test konfiguracji...', 'info');
+        
+        const testConfig = {
+            epochs: 50,
+            learning_rate: 0.001,
+            batch_size: 32,
+            lookback_days: 30
+        };
+        
+        fetch('/analysis/api/ml/config/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(testConfig)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                addLog('Konfiguracja zapisana pomyślnie', 'success');
+            } else {
+                addLog(`Błąd konfiguracji: ${data.error}`, 'error');
+            }
+        })
+        .catch(error => {
+            addLog(`Błąd: ${error.message}`, 'error');
+        });
+    });
+});
+</script>
+{% endblock %}

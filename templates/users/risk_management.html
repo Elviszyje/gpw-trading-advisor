@@ -1,0 +1,531 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Zarządzanie Ryzykiem{% endblock %}
+
+{% block extra_css %}
+<style>
+    .risk-management-container {
+        max-width: 900px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+    
+    .risk-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 6px 20px rgba(220, 53, 69, 0.3);
+    }
+    
+    .risk-header h1 {
+        font-size: 2.2rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    
+    .risk-header p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+    
+    .risk-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: 1px solid #f0f0f0;
+    }
+    
+    .section-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #f8f9fa;
+    }
+    
+    .section-icon {
+        font-size: 1.6rem;
+        margin-right: 12px;
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 25px;
+        align-items: flex-start;
+    }
+    
+    .form-group {
+        flex: 1;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.95rem;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e8e8e8;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #fafafa;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        outline: none;
+    }
+    
+    .help-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+    
+    .risk-indicator {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-left: 10px;
+        display: inline-block;
+    }
+    
+    .risk-low {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .risk-medium {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .risk-high {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .risk-preview {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 25px;
+        margin-top: 30px;
+    }
+    
+    .preview-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    .preview-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .warning-box h4 {
+        color: #856404;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .warning-box p {
+        margin: 0;
+        color: #664d03;
+        line-height: 1.5;
+    }
+    
+    .buttons-section {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 25px;
+        border-top: 2px solid #f8f9fa;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+        padding: 15px 35px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin: 0 10px;
+        min-width: 150px;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 1rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        margin: 0 10px;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .error-message {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 5px;
+        font-weight: 500;
+    }
+    
+    @media (max-width: 768px) {
+        .risk-management-container {
+            margin: 20px auto;
+            padding: 15px;
+        }
+        
+        .risk-card {
+            padding: 20px;
+        }
+        
+        .form-row {
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .risk-header {
+            padding: 25px 20px;
+        }
+        
+        .risk-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .preview-stats {
+            grid-template-columns: 1fr;
+        }
+        
+        .buttons-section .btn-primary,
+        .buttons-section .btn-secondary {
+            display: block;
+            margin: 10px auto;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="risk-management-container">
+    <!-- Header -->
+    <div class="risk-header">
+        <h1>⚠️ Zarządzanie Ryzykiem</h1>
+        <p>Skonfiguruj parametry które chronią Twój kapitał</p>
+    </div>
+
+    <form method="post" id="riskForm">
+        {% csrf_token %}
+        
+        <!-- Stop Loss & Take Profit -->
+        <div class="risk-card">
+            <h2 class="section-title">
+                <span class="section-icon">🛑</span>
+                Automatyczne Zamykanie Pozycji
+            </h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.max_loss_percent.id_for_label }}">
+                        {{ form.max_loss_percent.label }}
+                        <span class="risk-indicator risk-high" id="lossRisk">WYSOKIE RYZYKO</span>
+                    </label>
+                    {{ form.max_loss_percent }}
+                    {% if form.max_loss_percent.help_text %}
+                        <div class="help-text">{{ form.max_loss_percent.help_text }}</div>
+                    {% endif %}
+                    {% if form.max_loss_percent.errors %}
+                        <div class="error-message">{{ form.max_loss_percent.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.min_profit_percent.id_for_label }}">
+                        {{ form.min_profit_percent.label }}
+                        <span class="risk-indicator risk-medium" id="profitTarget">ŚREDNI CEL</span>
+                    </label>
+                    {{ form.min_profit_percent }}
+                    {% if form.min_profit_percent.help_text %}
+                        <div class="help-text">{{ form.min_profit_percent.help_text }}</div>
+                    {% endif %}
+                    {% if form.min_profit_percent.errors %}
+                        <div class="error-message">{{ form.min_profit_percent.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4>💡 Jak to działa?</h4>
+                <p>
+                    <strong>Stop Loss:</strong> Automatycznie sprzedamy akcje gdy strata osiągnie ten poziom.<br>
+                    <strong>Take Profit:</strong> Automatycznie sprzedamy gdy zysk osiągnie ten poziom.
+                </p>
+            </div>
+        </div>
+
+        <!-- Position Sizing -->
+        <div class="risk-card">
+            <h2 class="section-title">
+                <span class="section-icon">💰</span>
+                Wielkość Pozycji
+            </h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.position_size_percent.id_for_label }}">
+                        {{ form.position_size_percent.label }}
+                        <span class="risk-indicator risk-medium" id="positionRisk">ŚREDNIE RYZYKO</span>
+                    </label>
+                    {{ form.position_size_percent }}
+                    {% if form.position_size_percent.help_text %}
+                        <div class="help-text">{{ form.position_size_percent.help_text }}</div>
+                    {% endif %}
+                    {% if form.position_size_percent.errors %}
+                        <div class="error-message">{{ form.position_size_percent.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.max_positions.id_for_label }}">
+                        {{ form.max_positions.label }}
+                    </label>
+                    {{ form.max_positions }}
+                    {% if form.max_positions.help_text %}
+                        <div class="help-text">{{ form.max_positions.help_text }}</div>
+                    {% endif %}
+                    {% if form.max_positions.errors %}
+                        <div class="error-message">{{ form.max_positions.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Confidence Levels -->
+        <div class="risk-card">
+            <h2 class="section-title">
+                <span class="section-icon">🎯</span>
+                Poziomy Pewności Sygnałów
+            </h2>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.min_confidence_buy.id_for_label }}">
+                        {{ form.min_confidence_buy.label }}
+                    </label>
+                    {{ form.min_confidence_buy }}
+                    {% if form.min_confidence_buy.help_text %}
+                        <div class="help-text">{{ form.min_confidence_buy.help_text }}</div>
+                    {% endif %}
+                    {% if form.min_confidence_buy.errors %}
+                        <div class="error-message">{{ form.min_confidence_buy.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.min_confidence_sell.id_for_label }}">
+                        {{ form.min_confidence_sell.label }}
+                    </label>
+                    {{ form.min_confidence_sell }}
+                    {% if form.min_confidence_sell.help_text %}
+                        <div class="help-text">{{ form.min_confidence_sell.help_text }}</div>
+                    {% endif %}
+                    {% if form.min_confidence_sell.errors %}
+                        <div class="error-message">{{ form.min_confidence_sell.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="warning-box">
+                <h4>🔍 Poziomy pewności</h4>
+                <p>
+                    Wyższe wartości = mniej sygnałów ale większa precyzja. 
+                    Niższe wartości = więcej okazji ale większe ryzyko błędnych sygnałów.
+                </p>
+            </div>
+        </div>
+
+        <!-- Risk Preview -->
+        <div class="risk-preview">
+            <h3 class="preview-title">📊 Podgląd Parametrów Ryzyka</h3>
+            <div class="preview-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="maxLossPerTrade">-5.0%</div>
+                    <div class="stat-label">Maks. strata na transakcję</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="maxLossTotal">-25.0%</div>
+                    <div class="stat-label">Maks. strata całkowita</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="expectedSignals">2-4</div>
+                    <div class="stat-label">Sygnały dziennie</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="capitalUtilization">15%</div>
+                    <div class="stat-label">Wykorzystanie kapitału</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="buttons-section">
+            <a href="{% url 'users:trading_preferences' %}" class="btn-secondary">
+                ← Wróć do Preferencji
+            </a>
+            <button type="submit" class="btn-primary" id="saveBtn">
+                💾 Zapisz Ustawienia Ryzyka
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements for real-time updates
+    const maxLossInput = document.getElementById('{{ form.max_loss_percent.id_for_label }}');
+    const positionSizeInput = document.getElementById('{{ form.position_size_percent.id_for_label }}');
+    const maxPositionsInput = document.getElementById('{{ form.max_positions.id_for_label }}');
+    const minConfidenceBuyInput = document.getElementById('{{ form.min_confidence_buy.id_for_label }}');
+    const minConfidenceSellInput = document.getElementById('{{ form.min_confidence_sell.id_for_label }}');
+    
+    // Update functions
+    function updateRiskIndicators() {
+        const maxLoss = parseFloat(maxLossInput.value) || 5;
+        const positionSize = parseFloat(positionSizeInput.value) || 5;
+        const maxPositions = parseInt(maxPositionsInput.value) || 5;
+        const confidenceBuy = parseFloat(minConfidenceBuyInput.value) || 70;
+        const confidenceSell = parseFloat(minConfidenceSellInput.value) || 60;
+        
+        // Update risk indicators
+        const lossRisk = document.getElementById('lossRisk');
+        if (maxLoss <= 3) {
+            lossRisk.className = 'risk-indicator risk-low';
+            lossRisk.textContent = 'NISKIE RYZYKO';
+        } else if (maxLoss <= 7) {
+            lossRisk.className = 'risk-indicator risk-medium';
+            lossRisk.textContent = 'ŚREDNIE RYZYKO';
+        } else {
+            lossRisk.className = 'risk-indicator risk-high';
+            lossRisk.textContent = 'WYSOKIE RYZYKO';
+        }
+        
+        const positionRisk = document.getElementById('positionRisk');
+        if (positionSize <= 5) {
+            positionRisk.className = 'risk-indicator risk-low';
+            positionRisk.textContent = 'NISKIE RYZYKO';
+        } else if (positionSize <= 15) {
+            positionRisk.className = 'risk-indicator risk-medium';
+            positionRisk.textContent = 'ŚREDNIE RYZYKO';
+        } else {
+            positionRisk.className = 'risk-indicator risk-high';
+            positionRisk.textContent = 'WYSOKIE RYZYKO';
+        }
+        
+        // Update preview stats
+        document.getElementById('maxLossPerTrade').textContent = `-${maxLoss.toFixed(1)}%`;
+        document.getElementById('maxLossTotal').textContent = `-${(maxLoss * maxPositions).toFixed(1)}%`;
+        document.getElementById('capitalUtilization').textContent = `${(positionSize * maxPositions).toFixed(0)}%`;
+        
+        // Estimate signals based on confidence
+        let avgConfidence = (confidenceBuy + confidenceSell) / 2;
+        let estimatedSignals = avgConfidence < 60 ? '5-8' : avgConfidence < 75 ? '2-4' : '1-2';
+        document.getElementById('expectedSignals').textContent = estimatedSignals;
+    }
+    
+    // Add event listeners
+    [maxLossInput, positionSizeInput, maxPositionsInput, minConfidenceBuyInput, minConfidenceSellInput]
+        .forEach(input => {
+            if (input) {
+                input.addEventListener('input', updateRiskIndicators);
+            }
+        });
+    
+    // Initial update
+    updateRiskIndicators();
+    
+    // Form submission
+    const form = document.getElementById('riskForm');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    form.addEventListener('submit', function() {
+        saveBtn.innerHTML = '⏳ Zapisywanie...';
+        saveBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

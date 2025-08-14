@@ -1,0 +1,365 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Lista spółek{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-building me-2"></i>Zarządzanie spółkami</h1>
+    <div>
+        <span class="badge bg-primary me-2">{{ stats.total }} {% if status_filter == 'active' %}aktywnych{% elif status_filter == 'inactive' %}usuniętych{% else %}wszystkich{% endif %}</span>
+        <span class="badge bg-success">{{ stats.monitored }} monitorowanych</span>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Aktywne spółki</h6>
+                        <h3 class="mb-0">{{ stats.active_companies }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-building fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Monitorowane</h6>
+                        <h3 class="mb-0">{{ stats.monitored }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-eye fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Usunięte</h6>
+                        <h3 class="mb-0">{{ stats.inactive_companies }}</h3>
+                    </div>
+                    <div class="text-danger">
+                        <i class="fas fa-trash fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Rynki</h6>
+                        <h3 class="mb-0">{{ stats.markets }}</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Szukaj symbol/nazwa</label>
+                <input type="text" class="form-control" name="search" 
+                       value="{{ search_query }}" placeholder="np. PKN, ORLEN">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Rynek</label>
+                <select class="form-select" name="market">
+                    <option value="">Wszystkie</option>
+                    {% for market in markets %}
+                        <option value="{{ market }}" {% if market == market_filter %}selected{% endif %}>
+                            {{ market }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select" name="status">
+                    <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktywne</option>
+                    <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Usunięte</option>
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Wszystkie</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Monitorowanie</label>
+                <select class="form-select" name="monitored">
+                    <option value="">Wszystkie</option>
+                    <option value="true" {% if monitored_filter == 'true' %}selected{% endif %}>Monitorowane</option>
+                    <option value="false" {% if monitored_filter == 'false' %}selected{% endif %}>Niemonitorowane</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtruj
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Companies Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Spółki ({{ page_obj.paginator.count }})</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Nazwa</th>
+                        <th>Rynek</th>
+                        <th>Status</th>
+                        <th>Monitorowanie</th>
+                        <th>Działania</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in page_obj %}
+                    <tr style="cursor: pointer;" data-company-url="/users/management/companies/{{ company.symbol }}/">
+                        <td>
+                            <strong>{{ company.symbol }}</strong>
+                        </td>
+                        <td>{{ company.name|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ company.market }}</span>
+                        </td>
+                        <td>
+                            {% if company.is_active %}
+                                <span class="badge bg-success status-badge">Aktywne</span>
+                            {% else %}
+                                <span class="badge bg-danger status-badge">Nieaktywne</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if company.is_monitored %}
+                                <span class="badge bg-primary status-badge">Monitorowane</span>
+                            {% else %}
+                                <span class="badge bg-secondary status-badge">Nie</span>
+                            {% endif %}
+                        </td>
+                        <td class="table-actions">
+                            <a href="/users/management/companies/{{ company.symbol }}/" 
+                               class="btn btn-sm btn-outline-primary me-1" title="Zobacz szczegóły">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'users:company_edit' company.symbol %}" 
+                               class="btn btn-sm btn-outline-secondary me-1" title="Edytuj">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-{% if company.is_monitored %}warning{% else %}success{% endif %} toggle-monitoring"
+                                    data-symbol="{{ company.symbol }}"
+                                    data-monitored="{{ company.is_monitored|yesno:'true,false' }}"
+                                    title="{% if company.is_monitored %}Wyłącz monitoring{% else %}Włącz monitoring{% endif %}">
+                                <i class="fas fa-{% if company.is_monitored %}eye-slash{% else %}eye{% endif %}"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Nie znaleziono spółek</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginacja" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if market_filter %}&market={{ market_filter }}{% endif %}{% if monitored_filter %}&monitored={{ monitored_filter }}{% endif %}">Pierwsza</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if market_filter %}&market={{ market_filter }}{% endif %}{% if monitored_filter %}&monitored={{ monitored_filter }}{% endif %}">Poprzednia</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Strona {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if market_filter %}&market={{ market_filter }}{% endif %}{% if monitored_filter %}&monitored={{ monitored_filter }}{% endif %}">Następna</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if market_filter %}&market={{ market_filter }}{% endif %}{% if monitored_filter %}&monitored={{ monitored_filter }}{% endif %}">Ostatnia</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token - improved function to get token from multiple sources
+    function getCSRFToken() {
+        // Try to get from meta tag
+        const metaToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content');
+        if (metaToken && metaToken.length > 10) {
+            return metaToken;
+        }
+        
+        // Try to get from input field
+        const inputToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        if (inputToken && inputToken.length > 10) {
+            return inputToken;
+        }
+        
+        // Try to get from cookie as last resort
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        
+        console.error('CSRF token not found!');
+        return '';
+    }
+    
+    // Handle row clicks for navigation (set up first)
+    document.querySelectorAll('tbody tr[data-company-url]').forEach(row => {
+        row.addEventListener('click', function(event) {
+            // Check if event was already handled by toggle button
+            if (event._handledByToggle) {
+                console.log('Row click ignored - event already handled by toggle');
+                return;
+            }
+            
+            // Only navigate if the click wasn't on a button, link, or their children
+            const clickedElement = event.target;
+            const isButtonOrLink = clickedElement.closest('button, a, .toggle-monitoring');
+            
+            console.log('Row clicked, target:', clickedElement.tagName, 'isButtonOrLink:', !!isButtonOrLink);
+            
+            if (!isButtonOrLink) {
+                console.log('Navigating to:', this.dataset.companyUrl);
+                window.location.href = this.dataset.companyUrl;
+            } else {
+                console.log('Click ignored - was on interactive element');
+            }
+        }, true); // Use capturing phase
+    });
+    
+    // Toggle monitoring functionality (set up second, will override row handler)
+    document.querySelectorAll('.toggle-monitoring').forEach(button => {
+        button.addEventListener('click', function(event) {
+            // AGGRESSIVELY stop all event propagation
+            event.preventDefault(); 
+            event.stopPropagation(); 
+            event.stopImmediatePropagation(); 
+            
+            // Additional safety - mark the event as handled
+            event._handledByToggle = true;
+            
+            console.log('Toggle button clicked for:', this.dataset.symbol);
+            
+            const symbol = this.dataset.symbol;
+            const isMonitored = this.dataset.monitored === 'true';
+            const csrfToken = getCSRFToken();
+            
+            console.log('Toggle monitoring for:', symbol);
+            console.log('CSRF Token length:', csrfToken.length);
+            console.log('CSRF Token first 10 chars:', csrfToken.substring(0, 10));
+            
+            fetch(`/users/management/companies/${symbol}/toggle-monitoring/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update button
+                    this.dataset.monitored = data.is_monitored ? 'true' : 'false';
+                    this.className = `btn btn-sm btn-outline-${data.is_monitored ? 'warning' : 'success'} toggle-monitoring`;
+                    this.innerHTML = `<i class="fas fa-${data.is_monitored ? 'eye-slash' : 'eye'}"></i>`;
+                    
+                    // Update badge in table
+                    const row = this.closest('tr');
+                    const badge = row.querySelector('td:nth-child(5) .badge');
+                    badge.className = `badge status-badge ${data.is_monitored ? 'bg-primary' : 'bg-secondary'}`;
+                    badge.textContent = data.is_monitored ? 'Monitorowane' : 'Nie';
+                    
+                    // Show toast notification
+                    showToast(data.message, 'success');
+                } else {
+                    showToast('Błąd podczas zmiany statusu', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Błąd połączenia', 'error');
+            });
+        });
+    });
+});
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

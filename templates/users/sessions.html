@@ -1,0 +1,422 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Sesje użytkownika{% endblock %}
+
+{% block extra_css %}
+<style>
+    .session-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s;
+    }
+    
+    .session-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .session-header {
+        display: flex;
+        justify-content-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .session-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+    
+    .status-current {
+        background-color: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    .status-expired {
+        background-color: #dc3545;
+    }
+    
+    .status-active {
+        background-color: #007bff;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .session-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 4px;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .device-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-top: 10px;
+    }
+    
+    .device-icon {
+        width: 24px;
+        height: 24px;
+        color: #666;
+    }
+    
+    .btn-danger-outline {
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        background: transparent;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-danger-outline:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+    }
+    
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+    
+    .filter-controls {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-users-cog text-primary me-2"></i>
+                    Aktywne sesje
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Sesje</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Statystyki -->
+            <div class="stats-card">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.total_sessions }}</div>
+                        <div class="stat-label">Wszystkie sesje</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.active_sessions }}</div>
+                        <div class="stat-label">Aktywne</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.expired_sessions }}</div>
+                        <div class="stat-label">Wygasłe</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.current_session_duration }}</div>
+                        <div class="stat-label">Czas bieżącej sesji</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtry -->
+            <div class="filter-controls">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtry
+                </h5>
+                <form method="get" class="filter-grid">
+                    <div>
+                        <label class="form-label">Status sesji</label>
+                        <select name="status" class="form-select">
+                            <option value="">Wszystkie</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Aktywne</option>
+                            <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>Wygasłe</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Typ urządzenia</label>
+                        <select name="device" class="form-select">
+                            <option value="">Wszystkie</option>
+                            <option value="desktop" {% if request.GET.device == 'desktop' %}selected{% endif %}>Desktop</option>
+                            <option value="mobile" {% if request.GET.device == 'mobile' %}selected{% endif %}>Mobile</option>
+                            <option value="tablet" {% if request.GET.device == 'tablet' %}selected{% endif %}>Tablet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Sortowanie</label>
+                        <select name="sort" class="form-select">
+                            <option value="-last_activity" {% if request.GET.sort == '-last_activity' %}selected{% endif %}>Ostatnia aktywność</option>
+                            <option value="-created_at" {% if request.GET.sort == '-created_at' %}selected{% endif %}>Data utworzenia</option>
+                            <option value="ip_address" {% if request.GET.sort == 'ip_address' %}selected{% endif %}>Adres IP</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>
+                            Zastosuj filtry
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista sesji -->
+            {% for session in sessions %}
+                <div class="session-card">
+                    <div class="session-header">
+                        <div class="session-status">
+                            <div class="status-indicator status-{{ session.status }}"></div>
+                            <strong>
+                                {% if session.is_current %}
+                                    Bieżąca sesja
+                                {% elif session.is_active %}
+                                    Aktywna sesja
+                                {% else %}
+                                    Wygasła sesja
+                                {% endif %}
+                            </strong>
+                        </div>
+                        {% if not session.is_current %}
+                            <button class="btn-danger-outline" 
+                                    onclick="terminateSession('{{ session.session_key }}')"
+                                    {% if not session.is_active %}disabled{% endif %}>
+                                <i class="fas fa-sign-out-alt me-1"></i>
+                                {% if session.is_active %}Zakończ{% else %}Wygasła{% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="session-info">
+                        <div class="info-item">
+                            <div class="info-label">Adres IP</div>
+                            <div class="info-value">{{ session.ip_address }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Lokalizacja</div>
+                            <div class="info-value">{{ session.location|default:"Nieznana" }}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Ostatnia aktywność</div>
+                            <div class="info-value">{{ session.last_activity|timesince }} temu</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Utworzona</div>
+                            <div class="info-value">{{ session.created_at|date:"d.m.Y H:i" }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="device-info">
+                        {% if session.device_type == 'mobile' %}
+                            <i class="fas fa-mobile-alt device-icon"></i>
+                        {% elif session.device_type == 'tablet' %}
+                            <i class="fas fa-tablet-alt device-icon"></i>
+                        {% else %}
+                            <i class="fas fa-desktop device-icon"></i>
+                        {% endif %}
+                        <div>
+                            <div><strong>{{ session.browser_name }} {{ session.browser_version }}</strong></div>
+                            <div class="text-muted">{{ session.os_name }} {{ session.os_version }}</div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="session-card text-center">
+                    <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Brak sesji do wyświetlenia</h5>
+                    <p class="text-muted">Nie znaleziono sesji pasujących do wybranych filtrów.</p>
+                </div>
+            {% endfor %}
+
+            <!-- Paginacja -->
+            {% if sessions.has_other_pages %}
+                <nav aria-label="Nawigacja sesji">
+                    <ul class="pagination justify-content-center">
+                        {% if sessions.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.device %}&device={{ request.GET.device }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sessions.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.device %}&device={{ request.GET.device }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in sessions.paginator.page_range %}
+                            {% if sessions.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > sessions.number|add:'-3' and num < sessions.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.device %}&device={{ request.GET.device }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if sessions.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sessions.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.device %}&device={{ request.GET.device }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ sessions.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.device %}&device={{ request.GET.device }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+            <!-- Akcje masowe -->
+            <div class="d-flex justify-content-end gap-3 mt-4">
+                <button class="btn btn-outline-danger" onclick="terminateAllOtherSessions()">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    Zakończ wszystkie inne sesje
+                </button>
+                <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Powrót do dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function terminateSession(sessionKey) {
+    if (confirm('Czy na pewno chcesz zakończyć tę sesję?')) {
+        fetch(`/users/sessions/terminate/${sessionKey}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Wystąpił błąd podczas kończenia sesji');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Wystąpił błąd podczas kończenia sesji');
+        });
+    }
+}
+
+function terminateAllOtherSessions() {
+    if (confirm('Czy na pewno chcesz zakończyć wszystkie inne sesje? Ta akcja wyloguje Cię ze wszystkich innych urządzeń.')) {
+        fetch('/users/sessions/terminate-all-others/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Wszystkie inne sesje zostały zakończone');
+                location.reload();
+            } else {
+                alert('Wystąpił błąd podczas kończenia sesji');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Wystąpił błąd podczas kończenia sesji');
+        });
+    }
+}
+
+// Auto-refresh co 30 sekund
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

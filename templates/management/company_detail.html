@@ -1,0 +1,407 @@
+{% extends 'main/base.html' %}
+{% load tz %}
+
+{% block title %}{{ company.symbol }} - {{ company.name }}{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="/users/management/companies/" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="mb-0">{{ company.symbol }}</h1>
+            <p class="text-muted mb-0">{{ company.name|default:"Brak nazwy" }}</p>
+        </div>
+    </div>
+    <div>
+        <a href="{% url 'users:company_edit' company.symbol %}" class="btn btn-primary me-2">
+            <i class="fas fa-edit"></i> Edytuj
+        </a>
+        <button type="button" 
+                class="btn btn-{% if company.is_monitored %}warning{% else %}success{% endif %} toggle-monitoring"
+                data-symbol="{{ company.symbol }}"
+                data-monitored="{{ company.is_monitored|yesno:'true,false' }}">
+            <i class="fas fa-{% if company.is_monitored %}eye-slash{% else %}eye{% endif %} me-1"></i>
+            {% if company.is_monitored %}Wyłącz monitoring{% else %}Włącz monitoring{% endif %}
+        </button>
+    </div>
+</div>
+
+<!-- Company Info Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Symbol</h6>
+                <h4 class="mb-0">{{ company.symbol }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Rynek</h6>
+                <h4 class="mb-0">
+                    <span class="badge bg-secondary">{{ company.market }}</span>
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Status</h6>
+                <h4 class="mb-0">
+                    <span class="badge bg-{% if company.is_active %}success{% else %}danger{% endif %}">
+                        {% if company.is_active %}Aktywne{% else %}Nieaktywne{% endif %}
+                    </span>
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Monitoring</h6>
+                <h4 class="mb-0">
+                    <span class="badge bg-{% if company.is_monitored %}primary{% else %}secondary{% endif %}">
+                        {% if company.is_monitored %}Włączony{% else %}Wyłączony{% endif %}
+                    </span>
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="companyTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" 
+                data-bs-target="#overview" type="button" role="tab">
+            <i class="fas fa-chart-line me-1"></i>Przegląd
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="calendar-tab" data-bs-toggle="tab" 
+                data-bs-target="#calendar" type="button" role="tab">
+            <i class="fas fa-calendar me-1"></i>Kalendarz ({{ calendar_events.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="data-tab" data-bs-toggle="tab" 
+                data-bs-target="#data" type="button" role="tab">
+            <i class="fas fa-database me-1"></i>Dane giełdowe
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="companyTabsContent">
+    <!-- Overview Tab -->
+    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informacje podstawowe</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Symbol:</strong></td>
+                                <td>{{ company.symbol }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Nazwa:</strong></td>
+                                <td>{{ company.name|default:"Brak danych" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Rynek:</strong></td>
+                                <td><span class="badge bg-secondary">{{ company.market }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if company.is_active %}success{% else %}danger{% endif %}">
+                                        {% if company.is_active %}Aktywne{% else %}Nieaktywne{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Monitoring:</strong></td>
+                                <td>
+                                    <span class="badge bg-{% if company.is_monitored %}primary{% else %}secondary{% endif %}">
+                                        {% if company.is_monitored %}Włączony{% else %}Wyłączony{% endif %}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Statystyki</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-primary mb-1">{{ calendar_events.count }}</h3>
+                                    <small class="text-muted">Wydarzenia kalendarzowe</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="text-success mb-1">{{ latest_data|length }}</h3>
+                                    <small class="text-muted">Ostatnie notowania</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Tab -->
+    <div class="tab-pane fade" id="calendar" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Wydarzenia kalendarzowe</h5>
+            </div>
+            <div class="card-body">
+                {% if calendar_events %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Typ</th>
+                                    <th>Tytuł</th>
+                                    <th>Opis</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in calendar_events %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ event.event_date|localtime|date:"d.m.Y H:i" }}</strong>
+                                        {% if event.event_time %}
+                                            <br><small class="text-muted">{{ event.event_time|time:"H:i" }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ event.event_type|default:"Inne" }}</span>
+                                    </td>
+                                    <td>{{ event.title|truncatechars:50 }}</td>
+                                    <td>{{ event.description|truncatechars:100|default:"Brak opisu" }}</td>
+                                    <td>
+                                        {% if event.event_date < today %}
+                                            <span class="badge bg-secondary">Przeszłe</span>
+                                        {% elif event.event_date == today %}
+                                            <span class="badge bg-warning">Dziś</span>
+                                        {% else %}
+                                            <span class="badge bg-primary">Nadchodzące</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Brak wydarzeń kalendarzowych dla tej spółki</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Data Tab -->
+    <div class="tab-pane fade" id="data" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Dane giełdowe</h5>
+                    <div>
+                        <small class="text-muted me-3">
+                            <i class="fas fa-info-circle"></i> Kliknij na wiersz aby zobaczyć dane intraday
+                        </small>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshStockData()">
+                            <i class="fas fa-sync-alt"></i> Odśwież
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if latest_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Otwarcie</th>
+                                    <th>Najwyższa</th>
+                                    <th>Najniższa</th>
+                                    <th>Zamknięcie</th>
+                                    <th>Wolumen</th>
+                                    <th>Zmiana (PLN)</th>
+                                    <th>Zmiana (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for data in latest_data %}
+                                <tr class="clickable-row" onclick="window.location.href='{% url 'users:company_intraday' company.symbol data.trading_session.date|date:'Y-m-d' %}';" style="cursor: pointer;">
+                                    <td>
+                                        <strong>{{ data.trading_session.date|date:"d.m.Y" }}</strong>
+                                        <small class="text-muted d-block">{{ data.data_timestamp|localtime|date:"H:i:s" }}</small>
+                                    </td>
+                                    <td>{{ data.open_price|floatformat:2 }}</td>
+                                    <td>{{ data.high_price|floatformat:2 }}</td>
+                                    <td>{{ data.low_price|floatformat:2 }}</td>
+                                    <td>{{ data.close_price|floatformat:2 }}</td>
+                                    <td>{{ data.volume|default:"-" }}</td>
+                                    <td>
+                                        {% if data.price_change %}
+                                            <span class="badge bg-{% if data.price_change > 0 %}success{% else %}danger{% endif %}">
+                                                {{ data.price_change|floatformat:2 }} PLN
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if data.price_change_percent %}
+                                            <span class="badge bg-{% if data.price_change_percent > 0 %}success{% else %}danger{% endif %}">
+                                                {{ data.price_change_percent|floatformat:2 }}%
+                                            </span>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Brak danych giełdowych dla tej spółki</p>
+                        <button class="btn btn-primary" onclick="refreshStockData()">
+                            <i class="fas fa-sync-alt me-1"></i>Pobierz dane
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '';
+    }
+    
+    // Toggle monitoring functionality
+    document.querySelector('.toggle-monitoring')?.addEventListener('click', function(event) {
+        event.stopPropagation(); // Prevent any parent click events
+        const symbol = this.dataset.symbol;
+        const isMonitored = this.dataset.monitored === 'true';
+        
+        fetch(`/users/management/companies/${symbol}/toggle-monitoring/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update button
+                this.dataset.monitored = data.is_monitored ? 'true' : 'false';
+                this.className = `btn btn-${data.is_monitored ? 'warning' : 'success'} toggle-monitoring`;
+                this.innerHTML = `<i class="fas fa-${data.is_monitored ? 'eye-slash' : 'eye'} me-1"></i>${data.is_monitored ? 'Wyłącz monitoring' : 'Włącz monitoring'}`;
+                
+                // Update status cards
+                const statusCards = document.querySelectorAll('.stat-card .badge');
+                statusCards.forEach(badge => {
+                    if (badge.textContent.includes('Włączony') || badge.textContent.includes('Wyłączony')) {
+                        badge.className = `badge bg-${data.is_monitored ? 'primary' : 'secondary'}`;
+                        badge.textContent = data.is_monitored ? 'Włączony' : 'Wyłączony';
+                    }
+                });
+                
+                // Show toast notification
+                showToast(data.message, 'success');
+            } else {
+                showToast('Błąd podczas zmiany statusu', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('Błąd połączenia', 'error');
+        });
+    });
+});
+
+function refreshStockData() {
+    const symbol = '{{ company.symbol }}';
+    
+    showToast('Odświeżanie danych...', 'info');
+    
+    fetch(`/users/management/companies/${symbol}/refresh-data/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Dane zostały odświeżone', 'success');
+            // Reload the page to show updated data
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast('Błąd podczas odświeżania danych', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia', 'error');
+    });
+}
+
+function showToast(message, type) {
+    // Simple toast notification
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

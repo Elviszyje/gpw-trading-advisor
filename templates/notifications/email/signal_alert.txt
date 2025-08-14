@@ -1,0 +1,29 @@
+🎯 Trading Signal Alert
+
+Hello {{ user.first_name|default:user.username }},
+
+A new trading signal has been generated for {{ stock_symbol }}:
+
+Signal Details:
+- Type: {{ signal_type|upper }}
+- Confidence: {{ confidence }}%
+- Price at Signal: {{ price_at_signal }} PLN
+{% if target_price != 'N/A' %}- Target Price: {{ target_price }} PLN{% endif %}
+{% if stop_loss_price != 'N/A' %}- Stop Loss: {{ stop_loss_price }} PLN{% endif %}
+- Generated: {{ timestamp|date:"Y-m-d H:i:s" }}
+
+{% if signal_type == 'buy' %}
+📈 This is a BUY signal. Consider purchasing shares at the current price level.
+{% elif signal_type == 'sell' %}
+📉 This is a SELL signal. Consider selling your position at the current price level.
+{% else %}
+⏸️ This is a {{ signal_type|upper }} signal. Monitor the stock for further developments.
+{% endif %}
+
+Important: This is an automated signal based on technical analysis. Always do your own research and consider your risk tolerance before making any investment decisions.
+
+Best regards,
+{{ site_name }} Team
+
+---
+This notification was sent to {{ user.email }}. To update your notification preferences, please log in to your account.

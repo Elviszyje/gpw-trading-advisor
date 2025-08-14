@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Trading Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin: 20px 0; }
+        .stat-card { background-color: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #dee2e6; }
+        .stat-number { font-size: 24px; font-weight: bold; color: #495057; margin-bottom: 5px; }
+        .stat-label { font-size: 12px; color: #6c757d; text-transform: uppercase; }
+        .signals-list { background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .signal-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #dee2e6; }
+        .signal-item:last-child { border-bottom: none; }
+        .signal-symbol { font-weight: bold; color: #495057; }
+        .signal-type { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .signal-buy { background-color: #d4edda; color: #155724; }
+        .signal-sell { background-color: #f8d7da; color: #721c24; }
+        .signal-hold { background-color: #fff3cd; color: #856404; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+        .market-status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; }
+        .market-open { background-color: #d4edda; color: #155724; }
+        .market-closed { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Daily Trading Summary</h1>
+            <p>{{ date|date:"F j, Y" }}</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{ user.first_name|default:user.username }}</strong>,</p>
+            
+            <p>Here's your daily trading summary:</p>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <span class="market-status {% if market_status == 'Open' %}market-open{% else %}market-closed{% endif %}">
+                    Market {{ market_status }}
+                </span>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_signals }}</div>
+                    <div class="stat-label">Total Signals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ buy_signals }}</div>
+                    <div class="stat-label">Buy Signals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ sell_signals }}</div>
+                    <div class="stat-label">Sell Signals</div>
+                </div>
+            </div>
+            
+            {% if signals %}
+            <div class="signals-list">
+                <h3>🎯 Top Trading Signals Today</h3>
+                {% for signal in signals %}
+                <div class="signal-item">
+                    <div>
+                        <span class="signal-symbol">{{ signal.stock.symbol }}</span>
+                        <small style="color: #6c757d;">{{ signal.price_at_signal }} PLN</small>
+                    </div>
+                    <div>
+                        <span class="signal-type signal-{{ signal.signal_type }}">{{ signal.signal_type }}</span>
+                        <small style="color: #6c757d; margin-left: 10px;">{{ signal.confidence }}%</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="signals-list">
+                <h3>📝 Today's Activity</h3>
+                <p style="text-align: center; color: #6c757d; margin: 0;">No trading signals were generated today.</p>
+            </div>
+            {% endif %}
+            
+            <div style="background-color: #e3f2fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3>📈 Market Activity Summary</h3>
+                {% if total_signals > 0 %}
+                <p><strong>Most Active Signal Type:</strong> 
+                {% if buy_signals > sell_signals %}
+                    BUY signals dominated today with {{ buy_signals }} recommendations
+                {% elif sell_signals > buy_signals %}
+                    SELL signals were prevalent with {{ sell_signals }} recommendations
+                {% else %}
+                    Mixed signal activity with balanced BUY/SELL recommendations
+                {% endif %}
+                </p>
+                {% else %}
+                <p>Quiet trading day with minimal signal activity. This could indicate market consolidation or low volatility.</p>
+                {% endif %}
+            </div>
+            
+            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3>🔮 Tomorrow's Focus</h3>
+                <ul>
+                    <li>Continue monitoring your watchlist for new opportunities</li>
+                    <li>Review any open positions and their performance</li>
+                    <li>Check for news updates affecting your holdings</li>
+                    <li>Consider market sentiment and upcoming economic events</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{ site_name }}</strong></p>
+            <p>This daily summary was sent to {{ user.email }}.</p>
+            <p>To update your notification preferences, please log in to your account.</p>
+        </div>
+    </div>
+</body>
+</html>

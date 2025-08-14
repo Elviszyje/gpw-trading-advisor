@@ -1,0 +1,400 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Kreator Preferencji Handlowych{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-container {
+        max-width: 700px;
+        margin: 50px auto;
+        padding: 20px;
+    }
+    
+    .wizard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        border-radius: 15px;
+        text-align: center;
+        margin-bottom: 40px;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .wizard-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+    }
+    
+    .wizard-header p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .wizard-card {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: 1px solid #f0f0f0;
+    }
+    
+    .question-section {
+        margin-bottom: 35px;
+    }
+    
+    .question-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .question-icon {
+        font-size: 1.5rem;
+        margin-right: 12px;
+    }
+    
+    .question-subtitle {
+        color: #666;
+        font-size: 1rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
+    }
+    
+    .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .radio-option {
+        position: relative;
+        cursor: pointer;
+        padding: 15px 20px;
+        border: 2px solid #e8e8e8;
+        border-radius: 10px;
+        background: #fafafa;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .radio-option:hover {
+        border-color: #007bff;
+        background: #f8f9ff;
+        transform: translateY(-1px);
+    }
+    
+    .radio-option input[type="radio"] {
+        margin-right: 15px;
+        transform: scale(1.2);
+        accent-color: #007bff;
+    }
+    
+    .radio-option input[type="radio"]:checked ~ .radio-content {
+        color: #007bff;
+        font-weight: 600;
+    }
+    
+    .radio-option:has(input:checked) {
+        border-color: #007bff;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e3f2fd 100%);
+        box-shadow: 0 2px 10px rgba(0,123,255,0.15);
+    }
+    
+    .radio-content {
+        transition: all 0.3s ease;
+        line-height: 1.4;
+    }
+    
+    .wizard-buttons {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid #e0e0e0;
+    }
+    
+    .btn-wizard {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+        padding: 15px 35px;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        min-width: 200px;
+    }
+    
+    .btn-wizard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-right: 15px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+        text-decoration: none;
+        color: white;
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border: 1px solid #bbdefb;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 30px;
+    }
+    
+    .info-box h4 {
+        color: #1976d2;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    
+    .info-box p {
+        margin: 0;
+        color: #424242;
+        line-height: 1.5;
+    }
+    
+    .existing-preferences-banner {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border: 1px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .existing-preferences-banner h3 {
+        color: #856404;
+        margin-bottom: 10px;
+    }
+    
+    .existing-preferences-banner p {
+        color: #664d03;
+        margin: 0;
+    }
+    
+    @media (max-width: 768px) {
+        .wizard-container {
+            margin: 20px auto;
+            padding: 10px;
+        }
+        
+        .wizard-header {
+            padding: 30px 20px;
+        }
+        
+        .wizard-header h1 {
+            font-size: 2rem;
+        }
+        
+        .wizard-card {
+            padding: 25px;
+        }
+        
+        .radio-option {
+            padding: 12px 15px;
+        }
+        
+        .btn-wizard {
+            padding: 12px 25px;
+            font-size: 1rem;
+            min-width: auto;
+            width: 100%;
+        }
+        
+        .wizard-buttons .btn-secondary {
+            display: block;
+            margin: 0 0 15px 0;
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <!-- Header -->
+    <div class="wizard-header">
+        <h1>🧭 Kreator Preferencji</h1>
+        <p>W 3 prostych krokach ustalimy Twoje preferencje handlowe</p>
+    </div>
+
+    <!-- Existing Preferences Banner -->
+    {% if has_preferences %}
+        <div class="existing-preferences-banner">
+            <h3>⚠️ Masz już skonfigurowane preferencje</h3>
+            <p>Ukończenie kreatora zastąpi Twoje obecne ustawienia rekomendowanymi wartościami</p>
+        </div>
+    {% endif %}
+
+    <form method="post" class="wizard-form">
+        {% csrf_token %}
+        
+        <div class="wizard-card">
+            <!-- Experience Level Question -->
+            <div class="question-section">
+                <h2 class="question-title">
+                    <span class="question-icon">🎓</span>
+                    {{ form.experience_level.label }}
+                </h2>
+                <p class="question-subtitle">
+                    Twoje doświadczenie pomoże nam dobrać odpowiednie poziomy ryzyka i pewności sygnałów
+                </p>
+                
+                <div class="radio-group">
+                    {% for choice in form.experience_level %}
+                        <label class="radio-option">
+                            {{ choice.tag }}
+                            <span class="radio-content">{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                
+                {% if form.experience_level.errors %}
+                    <div class="error-message">{{ form.experience_level.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Capital Range Question -->
+            <div class="question-section">
+                <h2 class="question-title">
+                    <span class="question-icon">💰</span>
+                    {{ form.capital_range.label }}
+                </h2>
+                <p class="question-subtitle">
+                    Na podstawie Twojego kapitału dostosujemy minimalne wartości pozycji i zarządzanie ryzykiem
+                </p>
+                
+                <div class="radio-group">
+                    {% for choice in form.capital_range %}
+                        <label class="radio-option">
+                            {{ choice.tag }}
+                            <span class="radio-content">{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                
+                {% if form.capital_range.errors %}
+                    <div class="error-message">{{ form.capital_range.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Risk Tolerance Question -->
+            <div class="question-section">
+                <h2 class="question-title">
+                    <span class="question-icon">⚖️</span>
+                    {{ form.risk_tolerance.label }}
+                </h2>
+                <p class="question-subtitle">
+                    Określi Twój styl handlowy, cele zysku i maksymalne straty które jesteś gotów zaakceptować
+                </p>
+                
+                <div class="radio-group">
+                    {% for choice in form.risk_tolerance %}
+                        <label class="radio-option">
+                            {{ choice.tag }}
+                            <span class="radio-content">{{ choice.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                
+                {% if form.risk_tolerance.errors %}
+                    <div class="error-message">{{ form.risk_tolerance.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <h4>🎯 Co się stanie po ukończeniu?</h4>
+                <p>
+                    Na podstawie Twoich odpowiedzi utworzymy spersonalizowane preferencje handlowe. 
+                    Będziesz mógł je następnie dostroić w szczegółowych ustawieniach. 
+                    Preferencje wpłyną na wszystkie rekomendacje handlowe które otrzymujesz.
+                </p>
+            </div>
+
+            <!-- Buttons -->
+            <div class="wizard-buttons">
+                {% if has_preferences %}
+                    <a href="{% url 'users:trading_preferences' %}" class="btn-secondary">
+                        ⚙️ Edytuj Obecne Preferencje
+                    </a>
+                {% endif %}
+                
+                <button type="submit" class="btn-wizard">
+                    ✨ Utwórz Moje Preferencje
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Alternative Actions -->
+    <div class="wizard-card">
+        <h3 style="text-align: center; margin-bottom: 20px; color: #666;">
+            📚 Inne Opcje
+        </h3>
+        <div style="text-align: center;">
+            <a href="{% url 'users:trading_preferences' %}" class="btn-secondary">
+                🔧 Konfiguracja Manualna
+            </a>
+            <a href="{% url 'users:preferences_summary' %}" class="btn-secondary">
+                📊 Zobacz Przykładowe Ustawienia
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add some interactive feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const radioOptions = document.querySelectorAll('.radio-option');
+    
+    radioOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            // Visual feedback on click
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = '';
+            }, 150);
+        });
+    });
+    
+    // Form submission feedback
+    const form = document.querySelector('.wizard-form');
+    const submitBtn = document.querySelector('.btn-wizard');
+    
+    form.addEventListener('submit', function() {
+        submitBtn.innerHTML = '⏳ Tworzenie preferencji...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}

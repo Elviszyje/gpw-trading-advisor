@@ -1,0 +1,263 @@
+{% extends 'main/base.html' %}
+{% load tz %}
+
+{% block title %}{{ company.symbol }} - Dane intraday {{ target_date|date:"d.m.Y" }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{% url 'users:company_detail' company.symbol %}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="mb-0">{{ company.symbol }} - Dane intraday</h1>
+            <p class="text-muted mb-0">{{ target_date|date:"l, d.m.Y" }}</p>
+        </div>
+    </div>
+    <div>
+        <button type="button" class="btn btn-outline-primary" onclick="refreshData()">
+            <i class="fas fa-sync-alt me-1"></i>Odśwież
+        </button>
+    </div>
+</div>
+
+<!-- Day Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Liczba rekordów</h6>
+                <h4 class="mb-0">{{ day_stats.total_records }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Pierwszy pomiar</h6>
+                <h4 class="mb-0">
+                    {% if day_stats.first_record %}
+                        {{ day_stats.first_record|localtime|date:"H:i:s" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Ostatni pomiar</h6>
+                <h4 class="mb-0">
+                    {% if day_stats.last_record %}
+                        {{ day_stats.last_record|localtime|date:"H:i:s" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Zakres cen</h6>
+                <h4 class="mb-0">
+                    {% if day_stats.price_range %}
+                        {{ day_stats.price_range.min|floatformat:2 }} - {{ day_stats.price_range.max|floatformat:2 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Price Summary Card -->
+{% if day_stats.price_range %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Podsumowanie dnia</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <strong>Otwarcie:</strong><br>
+                        <span class="h5">{{ day_stats.price_range.open|floatformat:2 }} PLN</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Zamknięcie:</strong><br>
+                        <span class="h5">{{ day_stats.price_range.close|floatformat:2 }} PLN</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Najwyższa:</strong><br>
+                        <span class="h5 text-success">{{ day_stats.price_range.max|floatformat:2 }} PLN</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Najniższa:</strong><br>
+                        <span class="h5 text-danger">{{ day_stats.price_range.min|floatformat:2 }} PLN</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Zmiana:</strong><br>
+                        {% with change=day_stats.price_range.close|add:day_stats.price_range.open|floatformat:2 %}
+                        <span class="h5">{{ change }} PLN</span>
+                        {% endwith %}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Wolumen:</strong><br>
+                        <span class="h5">{{ day_stats.volume_total|default:"-" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Intraday Data Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Dane intraday ({{ day_stats.total_records }} rekordów)</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-success" onclick="exportData()">
+                    <i class="fas fa-download"></i> Eksport CSV
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if intraday_data %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Czas</th>
+                            <th>Otwarcie</th>
+                            <th>Najwyższa</th>
+                            <th>Najniższa</th>
+                            <th>Zamknięcie</th>
+                            <th>Wolumen</th>
+                            <th>Zmiana (PLN)</th>
+                            <th>Zmiana (%)</th>
+                            <th>Źródło</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in intraday_data %}
+                        <tr>
+                            <td>
+                                <strong>{{ data.data_timestamp|localtime|date:"H:i:s" }}</strong>
+                                <small class="text-muted d-block">{{ data.data_timestamp|localtime|date:"d.m.Y" }}</small>
+                            </td>
+                            <td>{{ data.open_price|floatformat:2|default:"-" }}</td>
+                            <td>{{ data.high_price|floatformat:2|default:"-" }}</td>
+                            <td>{{ data.low_price|floatformat:2|default:"-" }}</td>
+                            <td>
+                                <strong>{{ data.close_price|floatformat:2|default:"-" }}</strong>
+                            </td>
+                            <td>{{ data.volume|default:"-" }}</td>
+                            <td>
+                                {% if data.price_change %}
+                                    <span class="badge bg-{% if data.price_change > 0 %}success{% else %}danger{% endif %}">
+                                        {{ data.price_change|floatformat:2 }} PLN
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if data.price_change_percent %}
+                                    <span class="badge bg-{% if data.price_change_percent > 0 %}success{% else %}danger{% endif %}">
+                                        {{ data.price_change_percent|floatformat:2 }}%
+                                    </span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ data.source.name }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Brak danych intraday</h5>
+                <p class="text-muted">Brak danych dla dnia {{ target_date|date:"d.m.Y" }}</p>
+                <a href="{% url 'users:company_detail' company.symbol %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-1"></i>Powrót do spółki
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function refreshData() {
+    location.reload();
+}
+
+function exportData() {
+    // Simple CSV export
+    const rows = [];
+    const headers = ['Czas', 'Otwarcie', 'Najwyższa', 'Najniższa', 'Zamknięcie', 'Wolumen', 'Zmiana (PLN)', 'Zmiana (%)'];
+    rows.push(headers.join(','));
+    
+    {% for data in intraday_data %}
+    rows.push([
+        '{{ data.data_timestamp|localtime|date:"H:i:s" }}',
+        '{{ data.open_price|default:"" }}',
+        '{{ data.high_price|default:"" }}',
+        '{{ data.low_price|default:"" }}',
+        '{{ data.close_price|default:"" }}',
+        '{{ data.volume|default:"" }}',
+        '{{ data.price_change|default:"" }}',
+        '{{ data.price_change_percent|default:"" }}'
+    ].join(','));
+    {% endfor %}
+    
+    const csvContent = rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `{{ company.symbol }}_intraday_{{ target_date|date:"Y-m-d" }}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
+
+<style>
+.stat-card {
+    border-left: 4px solid #007bff;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-top: none;
+}
+
+.table-sm td {
+    padding: 0.5rem;
+}
+</style>
+{% endblock %}

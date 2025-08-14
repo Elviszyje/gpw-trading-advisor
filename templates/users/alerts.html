@@ -1,0 +1,608 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Alerty i powiadomienia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alert-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: box-shadow 0.3s;
+        border-left: 4px solid #ddd;
+    }
+    
+    .alert-card.alert-high {
+        border-left-color: #dc3545;
+    }
+    
+    .alert-card.alert-medium {
+        border-left-color: #ffc107;
+    }
+    
+    .alert-card.alert-low {
+        border-left-color: #28a745;
+    }
+    
+    .alert-card.alert-info {
+        border-left-color: #007bff;
+    }
+    
+    .alert-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .alert-header {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .alert-priority {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+    }
+    
+    .priority-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: bold;
+    }
+    
+    .priority-high {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .priority-medium {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    
+    .priority-low {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .priority-info {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .alert-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .status-unread {
+        background-color: #007bff;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: bold;
+    }
+    
+    .status-read {
+        color: #666;
+        font-size: 0.875rem;
+    }
+    
+    .alert-content {
+        margin-bottom: 15px;
+    }
+    
+    .alert-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    
+    .alert-description {
+        color: #666;
+        line-height: 1.5;
+    }
+    
+    .alert-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.875rem;
+        color: #666;
+        border-top: 1px solid #f0f0f0;
+        padding-top: 15px;
+    }
+    
+    .alert-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    
+    .stat-label {
+        color: #666;
+        font-size: 0.875rem;
+    }
+    
+    .stat-card.stat-high .stat-number {
+        color: #dc3545;
+    }
+    
+    .stat-card.stat-medium .stat-number {
+        color: #ffc107;
+    }
+    
+    .stat-card.stat-low .stat-number {
+        color: #28a745;
+    }
+    
+    .stat-card.stat-info .stat-number {
+        color: #007bff;
+    }
+    
+    .filter-panel {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        align-items: end;
+    }
+    
+    .bulk-actions {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .checkbox-custom {
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-bell text-primary me-2"></i>
+                    Alerty i powiadomienia
+                </h2>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="{% url 'users:dashboard' %}">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Alerty</li>
+                    </ol>
+                </nav>
+            </div>
+
+            <!-- Statystyki -->
+            <div class="stats-grid">
+                <div class="stat-card stat-high">
+                    <div class="stat-number">{{ stats.high_priority }}</div>
+                    <div class="stat-label">Wysokiej ważności</div>
+                </div>
+                <div class="stat-card stat-medium">
+                    <div class="stat-number">{{ stats.medium_priority }}</div>
+                    <div class="stat-label">Średniej ważności</div>
+                </div>
+                <div class="stat-card stat-low">
+                    <div class="stat-number">{{ stats.low_priority }}</div>
+                    <div class="stat-label">Niskiej ważności</div>
+                </div>
+                <div class="stat-card stat-info">
+                    <div class="stat-number">{{ stats.unread }}</div>
+                    <div class="stat-label">Nieprzeczytane</div>
+                </div>
+            </div>
+
+            <!-- Panel filtrów -->
+            <div class="filter-panel">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtry alertów
+                </h5>
+                <form method="get" class="filter-grid">
+                    <div>
+                        <label class="form-label">Priorytet</label>
+                        <select name="priority" class="form-select">
+                            <option value="">Wszystkie</option>
+                            <option value="high" {% if request.GET.priority == 'high' %}selected{% endif %}>Wysoki</option>
+                            <option value="medium" {% if request.GET.priority == 'medium' %}selected{% endif %}>Średni</option>
+                            <option value="low" {% if request.GET.priority == 'low' %}selected{% endif %}>Niski</option>
+                            <option value="info" {% if request.GET.priority == 'info' %}selected{% endif %}>Informacyjny</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">Wszystkie</option>
+                            <option value="unread" {% if request.GET.status == 'unread' %}selected{% endif %}>Nieprzeczytane</option>
+                            <option value="read" {% if request.GET.status == 'read' %}selected{% endif %}>Przeczytane</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Typ alertu</label>
+                        <select name="type" class="form-select">
+                            <option value="">Wszystkie</option>
+                            <option value="price" {% if request.GET.type == 'price' %}selected{% endif %}>Cenowe</option>
+                            <option value="volume" {% if request.GET.type == 'volume' %}selected{% endif %}>Wolumen</option>
+                            <option value="news" {% if request.GET.type == 'news' %}selected{% endif %}>Nowości</option>
+                            <option value="system" {% if request.GET.type == 'system' %}selected{% endif %}>Systemowe</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Data od</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>
+                            Zastosuj filtry
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Akcje masowe -->
+            <div class="bulk-actions">
+                <div class="d-flex align-items-center">
+                    <input type="checkbox" id="selectAll" class="checkbox-custom">
+                    <label for="selectAll" class="mb-0">Zaznacz wszystkie</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary btn-sm" onclick="markSelectedAsRead()">
+                        <i class="fas fa-eye me-1"></i>
+                        Oznacz jako przeczytane
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSelected()">
+                        <i class="fas fa-trash me-1"></i>
+                        Usuń wybrane
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista alertów -->
+            {% for alert in alerts %}
+                <div class="alert-card alert-{{ alert.priority }}" data-alert-id="{{ alert.id }}">
+                    <div class="alert-header">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="alert-checkbox me-3" value="{{ alert.id }}">
+                            <div class="alert-priority">
+                                <span class="priority-badge priority-{{ alert.priority }}">
+                                    {{ alert.get_priority_display }}
+                                </span>
+                                <i class="fas fa-{{ alert.get_icon }} me-2"></i>
+                                {{ alert.get_type_display }}
+                            </div>
+                        </div>
+                        <div class="alert-status">
+                            {% if not alert.is_read %}
+                                <span class="status-unread">NOWE</span>
+                            {% else %}
+                                <span class="status-read">Przeczytane</span>
+                            {% endif %}
+                            <div class="alert-actions">
+                                {% if not alert.is_read %}
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="markAsRead('{{ alert.id }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                {% endif %}
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="deleteAlert('{{ alert.id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert-content">
+                        <div class="alert-title">{{ alert.title }}</div>
+                        <div class="alert-description">{{ alert.message }}</div>
+                        
+                        {% if alert.related_symbol %}
+                            <div class="mt-2">
+                                <span class="badge bg-primary">{{ alert.related_symbol }}</span>
+                                {% if alert.trigger_value %}
+                                    <span class="badge bg-secondary">{{ alert.trigger_value }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert-meta">
+                        <div>
+                            <i class="fas fa-clock me-1"></i>
+                            {{ alert.created_at|timesince }} temu
+                            {% if alert.is_read and alert.read_at %}
+                                | Przeczytane {{ alert.read_at|timesince }} temu
+                            {% endif %}
+                        </div>
+                        {% if alert.action_url %}
+                            <a href="{{ alert.action_url }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-external-link-alt me-1"></i>
+                                Zobacz szczegóły
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <div class="alert-card text-center">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Brak alertów</h5>
+                    <p class="text-muted">
+                        {% if request.GET %}
+                            Brak alertów pasujących do wybranych filtrów.
+                            <a href="{% url 'users:alerts' %}">Pokaż wszystkie alerty</a>
+                        {% else %}
+                            Nie masz jeszcze żadnych alertów. Skonfiguruj alerty cenowe w ustawieniach.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endfor %}
+
+            <!-- Paginacja -->
+            {% if alerts.has_other_pages %}
+                <nav aria-label="Nawigacja alertów">
+                    <ul class="pagination justify-content-center">
+                        {% if alerts.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ alerts.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in alerts.paginator.page_range %}
+                            {% if alerts.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > alerts.number|add:'-3' and num < alerts.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if alerts.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ alerts.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ alerts.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+
+            <!-- Przycisk powrotu -->
+            <div class="text-center mt-4">
+                <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Powrót do dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Select all functionality
+document.getElementById('selectAll').addEventListener('change', function() {
+    const checkboxes = document.querySelectorAll('.alert-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = this.checked;
+    });
+});
+
+function markAsRead(alertId) {
+    fetch(`/users/alerts/${alertId}/mark-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Wystąpił błąd podczas oznaczania jako przeczytane');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas oznaczania jako przeczytane');
+    });
+}
+
+function deleteAlert(alertId) {
+    if (confirm('Czy na pewno chcesz usunąć ten alert?')) {
+        fetch(`/users/alerts/${alertId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`[data-alert-id="${alertId}"]`).remove();
+            } else {
+                alert('Wystąpił błąd podczas usuwania alertu');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Wystąpił błąd podczas usuwania alertu');
+        });
+    }
+}
+
+function markSelectedAsRead() {
+    const selected = getSelectedAlerts();
+    if (selected.length === 0) {
+        alert('Nie wybrano żadnych alertów');
+        return;
+    }
+    
+    fetch('/users/alerts/bulk-mark-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({alert_ids: selected})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Wystąpił błąd podczas oznaczania alertów');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Wystąpił błąd podczas oznaczania alertów');
+    });
+}
+
+function deleteSelected() {
+    const selected = getSelectedAlerts();
+    if (selected.length === 0) {
+        alert('Nie wybrano żadnych alertów');
+        return;
+    }
+    
+    if (confirm(`Czy na pewno chcesz usunąć ${selected.length} alertów?`)) {
+        fetch('/users/alerts/bulk-delete/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({alert_ids: selected})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Wystąpił błąd podczas usuwania alertów');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Wystąpił błąd podczas usuwania alertów');
+        });
+    }
+}
+
+function getSelectedAlerts() {
+    const checkboxes = document.querySelectorAll('.alert-checkbox:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// Auto-refresh for new alerts
+setInterval(function() {
+    // Check for new alerts without full page reload
+    fetch('/users/alerts/count/', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.new_alerts > 0) {
+            // Show notification about new alerts
+            showNewAlertsNotification(data.new_alerts);
+        }
+    })
+    .catch(error => console.error('Error checking for new alerts:', error));
+}, 60000); // Check every minute
+
+function showNewAlertsNotification(count) {
+    // Simple notification - could be enhanced with toast notifications
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-info alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; max-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-bell me-2"></i>
+        Masz ${count} nowych alertów!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

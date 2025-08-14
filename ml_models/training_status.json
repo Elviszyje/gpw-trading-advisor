@@ -1,0 +1,11 @@
+{
+  "training_in_progress": false,
+  "model_type": null,
+  "current_epoch": 0,
+  "total_epochs": 0,
+  "train_loss": null,
+  "val_loss": null,
+  "training_time": "00:00",
+  "last_training_time": null,
+  "status": "idle"
+}

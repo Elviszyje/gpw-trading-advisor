@@ -1,0 +1,276 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Import danych historycznych{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a href="{% url 'users:data_browser' %}" class="btn btn-outline-secondary me-3">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="mb-0">Import danych historycznych</h1>
+            <p class="text-muted mb-0">Importuj dane giełdowe z plików TXT</p>
+        </div>
+    </div>
+</div>
+
+<!-- Instructions Card -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Instrukcje</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Format plików:</h6>
+                        <ul class="mb-3">
+                            <li><strong>Rozszerzenie:</strong> .txt</li>
+                            <li><strong>Nazwa pliku:</strong> Symbol spółki (np. PKN.txt, 08N.txt)</li>
+                            <li><strong>Encoding:</strong> UTF-8</li>
+                            <li><strong>Separator:</strong> przecinek (,)</li>
+                        </ul>
+                        
+                        <h6>Kolumny w pliku:</h6>
+                        <code>&lt;TICKER&gt;,&lt;PER&gt;,&lt;DATE&gt;,&lt;TIME&gt;,&lt;OPEN&gt;,&lt;HIGH&gt;,&lt;LOW&gt;,&lt;CLOSE&gt;,&lt;VOL&gt;,&lt;OPENINT&gt;</code>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Interwały (PER):</h6>
+                        <ul class="mb-3">
+                            <li><strong>5</strong> - dane 5-minutowe</li>
+                            <li><strong>60</strong> - dane godzinowe</li>
+                            <li><strong>D</strong> - dane dzienne</li>
+                        </ul>
+                        
+                        <h6>Przykład wiersza:</h6>
+                        <code>PKN,5,20250224,110000,86.50,86.80,86.20,86.70,150000,0</code>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Wskazówka:</strong> System automatycznie pomija duplikaty i tworzy nowe spółki jeśli nie istnieją w bazie.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Form -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Wybierz pliki do importu</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="files" class="form-label">Pliki TXT z danymi historycznymi:</label>
+                        <input type="file" 
+                               class="form-control" 
+                               id="files" 
+                               name="files" 
+                               multiple 
+                               accept=".txt"
+                               required>
+                        <div class="form-text">
+                            Możesz wybrać wiele plików na raz (Ctrl/Cmd + kliknięcie)
+                        </div>
+                    </div>
+                    
+                    <!-- File List Preview -->
+                    <div id="fileList" class="mb-3" style="display: none;">
+                        <h6>Wybrane pliki:</h6>
+                        <ul id="fileListItems" class="list-group">
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn" disabled>
+                                <i class="fas fa-upload me-2"></i>Importuj dane
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-lg ms-2" onclick="clearFiles()">
+                                <i class="fas fa-times me-2"></i>Wyczyść
+                            </button>
+                        </div>
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Duplikaty będą automatycznie pominięte
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-spinner fa-spin me-2"></i>Importowanie danych...
+                </h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 100%" 
+                         aria-valuenow="100" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
+                    </div>
+                </div>
+                <p class="text-muted">Przetwarzanie plików, proszę czekać...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('files').addEventListener('change', function(e) {
+    const files = e.target.files;
+    const fileList = document.getElementById('fileList');
+    const fileListItems = document.getElementById('fileListItems');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (files.length > 0) {
+        // Show file list
+        fileList.style.display = 'block';
+        fileListItems.innerHTML = '';
+        
+        // Add files to list
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            
+            // Extract symbol from filename
+            const symbol = file.name.replace(/test_data_/g, '').replace('.txt', '').toUpperCase();
+            
+            listItem.innerHTML = `
+                <div>
+                    <i class="fas fa-file-alt text-primary me-2"></i>
+                    <strong>${file.name}</strong>
+                    <span class="badge bg-secondary ms-2">${symbol}</span>
+                </div>
+                <div>
+                    <small class="text-muted">${formatFileSize(file.size)}</small>
+                </div>
+            `;
+            
+            fileListItems.appendChild(listItem);
+        }
+        
+        // Enable submit button
+        submitBtn.disabled = false;
+    } else {
+        // Hide file list
+        fileList.style.display = 'none';
+        submitBtn.disabled = true;
+    }
+});
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function clearFiles() {
+    document.getElementById('files').value = '';
+    document.getElementById('fileList').style.display = 'none';
+    document.getElementById('submitBtn').disabled = true;
+}
+
+// Show progress modal on form submit
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    progressModal.show();
+});
+
+// File drag and drop
+const fileInput = document.getElementById('files');
+const form = document.getElementById('uploadForm');
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    form.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+['dragenter', 'dragover'].forEach(eventName => {
+    form.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    form.addEventListener(eventName, unhighlight, false);
+});
+
+form.addEventListener('drop', handleDrop, false);
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight(e) {
+    form.classList.add('border-primary', 'bg-light');
+}
+
+function unhighlight(e) {
+    form.classList.remove('border-primary', 'bg-light');
+}
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    
+    fileInput.files = files;
+    fileInput.dispatchEvent(new Event('change'));
+}
+</script>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+}
+
+#uploadForm.border-primary {
+    border: 2px dashed #007bff !important;
+    transition: all 0.3s ease;
+}
+
+.list-group-item {
+    border-left: 4px solid #007bff;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% { background-position: 1rem 0; }
+    100% { background-position: 0 0; }
+}
+</style>
+{% endblock %}

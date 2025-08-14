@@ -1,0 +1,196 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}Scrape Calendar Events | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .calendar-scraping-form {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .form-row {
+            margin-bottom: 15px;
+        }
+        .form-row label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-row input,
+        .form-row textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .submit-row {
+            text-align: right;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .default {
+            background-color: #417690;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .default:hover {
+            background-color: #205067;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffecb5;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .warning-box h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="calendar-scraping-form">
+    <h1>Scrape Calendar Events</h1>
+    
+    <div class="info-box">
+        <h3>📅 Calendar Event Scraping</h3>
+        <p>This tool allows you to scrape calendar events from financial websites with custom date ranges. 
+           The system will automatically detect date changes and track their impact on investor sentiment.</p>
+        <ul>
+            <li><strong>Date Range:</strong> Select the period for which to scrape events</li>
+            <li><strong>Change Detection:</strong> System automatically tracks event date modifications</li>
+            <li><strong>Sentiment Impact:</strong> Date changes are analyzed for market sentiment effects</li>
+            <li><strong>Stock Association:</strong> Events are automatically linked to relevant stock symbols</li>
+        </ul>
+    </div>
+    
+    <div class="warning-box">
+        <h4>⚠️ Important Notes</h4>
+        <ul>
+            <li>Date range cannot exceed 6 months to ensure reasonable scraping times</li>
+            <li>Existing events will be updated if date changes are detected</li>
+            <li>Date changes are automatically tracked for sentiment analysis</li>
+            <li>Large date ranges may take several minutes to complete</li>
+        </ul>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="form-row">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}:</label>
+            {{ form.name }}
+            {% if form.name.help_text %}
+                <div class="help-text">{{ form.name.help_text }}</div>
+            {% endif %}
+            {% if form.name.errors %}
+                <div class="error">{{ form.name.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-row">
+            <label for="{{ form.description.id_for_label }}">{{ form.description.label }}:</label>
+            {{ form.description }}
+            {% if form.description.help_text %}
+                <div class="help-text">{{ form.description.help_text }}</div>
+            {% endif %}
+            {% if form.description.errors %}
+                <div class="error">{{ form.description.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-row">
+            <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}:</label>
+            {{ form.start_date }}
+            {% if form.start_date.help_text %}
+                <div class="help-text">{{ form.start_date.help_text }}</div>
+            {% endif %}
+            {% if form.start_date.errors %}
+                <div class="error">{{ form.start_date.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-row">
+            <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}:</label>
+            {{ form.end_date }}
+            {% if form.end_date.help_text %}
+                <div class="help-text">{{ form.end_date.help_text }}</div>
+            {% endif %}
+            {% if form.end_date.errors %}
+                <div class="error">{{ form.end_date.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-row">
+            <label for="{{ form.source_urls.id_for_label }}">{{ form.source_urls.label }}:</label>
+            {{ form.source_urls }}
+            {% if form.source_urls.help_text %}
+                <div class="help-text">{{ form.source_urls.help_text }}</div>
+            {% endif %}
+            {% if form.source_urls.errors %}
+                <div class="error">{{ form.source_urls.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-row">
+            <label for="{{ form.scraping_config.id_for_label }}">{{ form.scraping_config.label }}:</label>
+            {{ form.scraping_config }}
+            {% if form.scraping_config.help_text %}
+                <div class="help-text">{{ form.scraping_config.help_text }}</div>
+            {% endif %}
+            {% if form.scraping_config.errors %}
+                <div class="error">{{ form.scraping_config.errors }}</div>
+            {% endif %}
+        </div>
+        
+        {% if form.non_field_errors %}
+            <div class="error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        
+        <div class="submit-row">
+            <input type="submit" value="Start Scraping" class="default" />
+            <a href="{% url 'admin:news_calendarscrapingjob_changelist' %}" style="margin-left: 10px;">Cancel</a>
+        </div>
+    </form>
+    
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <h3>🔍 Recent Scraping Jobs</h3>
+        <p><a href="{% url 'admin:news_calendarscrapingjob_changelist' %}">View all scraping jobs →</a></p>
+        
+        <h3>📊 Event Statistics</h3>
+        <p><a href="{% url 'admin:news_companycalendarevent_changelist' %}">View all calendar events →</a></p>
+        
+        <h3>⚠️ Date Changes</h3>
+        <p><a href="{% url 'admin:news_eventdatechange_changelist' %}">View all date changes →</a></p>
+    </div>
+</div>
+{% endblock %}

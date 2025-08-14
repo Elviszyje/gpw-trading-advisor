@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trading Signal Alert</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .content { padding: 30px; }
+        .signal-box { background-color: #f8f9fa; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .signal-buy { border-left-color: #28a745; }
+        .signal-sell { border-left-color: #dc3545; }
+        .signal-hold { border-left-color: #ffc107; }
+        .details-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .details-table th, .details-table td { padding: 12px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        .details-table th { background-color: #f8f9fa; font-weight: bold; }
+        .confidence { display: inline-block; padding: 5px 15px; border-radius: 20px; color: white; font-weight: bold; }
+        .confidence-high { background-color: #28a745; }
+        .confidence-medium { background-color: #ffc107; }
+        .confidence-low { background-color: #dc3545; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #6c757d; }
+        .disclaimer { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 15px; border-radius: 4px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Trading Signal Alert</h1>
+            <p>{{ stock_symbol }} - {{ signal_type|upper }}</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello <strong>{{ user.first_name|default:user.username }}</strong>,</p>
+            
+            <p>A new trading signal has been generated for <strong>{{ stock_symbol }}</strong>:</p>
+            
+            <div class="signal-box signal-{{ signal_type }}">
+                <h3>📊 Signal Details</h3>
+                <table class="details-table">
+                    <tr>
+                        <th>Signal Type</th>
+                        <td><strong>{{ signal_type|upper }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Confidence Level</th>
+                        <td>
+                            {% if confidence >= 80 %}
+                                <span class="confidence confidence-high">{{ confidence }}%</span>
+                            {% elif confidence >= 60 %}
+                                <span class="confidence confidence-medium">{{ confidence }}%</span>
+                            {% else %}
+                                <span class="confidence confidence-low">{{ confidence }}%</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Price at Signal</th>
+                        <td>{{ price_at_signal }} PLN</td>
+                    </tr>
+                    {% if target_price != 'N/A' %}
+                    <tr>
+                        <th>Target Price</th>
+                        <td>{{ target_price }} PLN</td>
+                    </tr>
+                    {% endif %}
+                    {% if stop_loss_price != 'N/A' %}
+                    <tr>
+                        <th>Stop Loss</th>
+                        <td>{{ stop_loss_price }} PLN</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Generated</th>
+                        <td>{{ timestamp|date:"Y-m-d H:i:s" }}</td>
+                    </tr>
+                </table>
+                
+                {% if signal_type == 'buy' %}
+                <p><strong>📈 BUY Signal:</strong> Technical analysis suggests this may be a good time to consider purchasing shares.</p>
+                {% elif signal_type == 'sell' %}
+                <p><strong>📉 SELL Signal:</strong> Technical analysis suggests this may be a good time to consider selling your position.</p>
+                {% else %}
+                <p><strong>⏸️ {{ signal_type|upper }} Signal:</strong> Monitor this stock for further developments.</p>
+                {% endif %}
+            </div>
+            
+            <div class="disclaimer">
+                <strong>⚠️ Important Disclaimer:</strong> This is an automated signal based on technical analysis. Always conduct your own research and consider your risk tolerance before making any investment decisions. Past performance does not guarantee future results.
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>{{ site_name }}</strong></p>
+            <p>This notification was sent to {{ user.email }}.</p>
+            <p>To update your notification preferences, please log in to your account.</p>
+        </div>
+    </div>
+</body>
+</html>

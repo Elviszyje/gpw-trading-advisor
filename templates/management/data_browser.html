@@ -1,0 +1,504 @@
+{% extends 'main/base.html' %}
+{% load tz %}
+
+{% block title %}Przeglądarka danych{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-database me-2"></i>Przeglądarka danych</h1>
+    <div>
+        {% if user.can_export_data %}
+        <button class="btn btn-success" onclick="exportData()">
+            <i class="fas fa-download me-1"></i>Eksportuj
+        </button>
+        {% endif %}
+        <button class="btn btn-primary" onclick="refreshData()">
+            <i class="fas fa-sync-alt me-1"></i>Odśwież
+        </button>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Spółki</h6>
+                        <h3 class="mb-0">{{ stats.companies_count }}</h3>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-building fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Notowania</h6>
+                        <h3 class="mb-0">{{ stats.stock_data_count|default:0 }}</h3>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Wydarzenia</h6>
+                        <h3 class="mb-0">{{ stats.events_count }}</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-calendar fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Ostatnia aktualizacja</h6>
+                        <h3 class="mb-0">{{ stats.last_update|timesince }}</h3>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtry</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3" id="filter-form">
+            <div class="col-md-3">
+                <label class="form-label">Symbol spółki</label>
+                <select class="form-select" name="symbol" id="symbol-select">
+                    <option value="">Wszystkie</option>
+                    {% for symbol in symbols %}
+                        <option value="{{ symbol.symbol }}" {% if symbol.symbol == selected_symbol %}selected{% endif %}>
+                            {{ symbol.symbol }} - {{ symbol.name|default:"Brak nazwy"|truncatechars:30 }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data od</label>
+                <input type="date" class="form-control" name="date_from" 
+                       value="{{ date_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Data do</label>
+                <input type="date" class="form-control" name="date_to" 
+                       value="{{ date_to|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Typ danych</label>
+                <select class="form-select" name="data_type">
+                    <option value="">Wszystkie</option>
+                    <option value="stock_data" {% if data_type == 'stock_data' %}selected{% endif %}>Notowania</option>
+                    <option value="calendar_events" {% if data_type == 'calendar_events' %}selected{% endif %}>Wydarzenia</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>Filtruj
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>Wyczyść
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="dataTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="stock-tab" data-bs-toggle="tab" 
+                data-bs-target="#stock-data" type="button" role="tab">
+            <i class="fas fa-chart-line me-1"></i>Notowania giełdowe
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="events-tab" data-bs-toggle="tab" 
+                data-bs-target="#calendar-events" type="button" role="tab">
+            <i class="fas fa-calendar me-1"></i>Wydarzenia kalendarzowe
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" 
+                data-bs-target="#analysis" type="button" role="tab">
+            <i class="fas fa-chart-bar me-1"></i>Analiza
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="dataTabsContent">
+    <!-- Stock Data Tab -->
+    <div class="tab-pane fade show active" id="stock-data" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Notowania giełdowe</h5>
+                    <small class="text-muted">{{ stock_data.count }} rekordów</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if stock_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Data</th>
+                                <th>Otwarcie</th>
+                                <th>Najwyższa</th>
+                                <th>Najniższa</th>
+                                <th>Zamknięcie</th>
+                                <th>Wolumen</th>
+                                <th>Zmiana (PLN)</th>
+                                <th>Zmiana (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for data in stock_data %}
+                            <tr style="cursor: pointer;" onclick="window.location.href='/users/management/companies/{{ data.stock.symbol }}/'">
+                                <td>
+                                    <strong>{{ data.stock.symbol }}</strong>
+                                </td>
+                                <td>{{ data.trading_session.date|date:"d.m.Y" }}</td>
+                                <td>{{ data.open_price|floatformat:2 }}</td>
+                                <td>{{ data.high_price|floatformat:2 }}</td>
+                                <td>{{ data.low_price|floatformat:2 }}</td>
+                                <td>{{ data.close_price|floatformat:2 }}</td>
+                                <td>{{ data.volume|default:"-" }}</td>
+                                <td>{{ data.volume|default:"-" }}</td>
+                                <td>
+                                    {% if data.price_change %}
+                                        <span class="badge bg-{% if data.price_change > 0 %}success{% else %}danger{% endif %}">
+                                            {{ data.price_change|floatformat:2 }} PLN
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if data.price_change_percent %}
+                                        <span class="badge bg-{% if data.price_change_percent > 0 %}success{% else %}danger{% endif %}">
+                                            {{ data.price_change_percent|floatformat:2 }}%
+                                        </span>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Brak danych notowań dla wybranych kryteriów</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Events Tab -->
+    <div class="tab-pane fade" id="calendar-events" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Wydarzenia kalendarzowe</h5>
+                    <small class="text-muted">{{ calendar_events.count }} rekordów</small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if calendar_events %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Data</th>
+                                <th>Typ</th>
+                                <th>Tytuł</th>
+                                <th>Opis</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in calendar_events %}
+                            <tr>
+                                <td>
+                                    <strong>{{ event.stock_symbol.symbol }}</strong>
+                                </td>
+                                <td>
+                                    {{ event.event_date|localtime|date:"d.m.Y H:i" }}
+                                    {% if event.event_time %}
+                                        <br><small class="text-muted">{{ event.event_time|time:"H:i" }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ event.event_type|default:"Inne" }}</span>
+                                </td>
+                                <td>{{ event.title|truncatechars:40 }}</td>
+                                <td>{{ event.description|truncatechars:60|default:"Brak opisu" }}</td>
+                                <td>
+                                    {% if event.event_date < today %}
+                                        <span class="badge bg-secondary">Przeszłe</span>
+                                    {% elif event.event_date == today %}
+                                        <span class="badge bg-warning">Dziś</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Nadchodzące</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Brak wydarzeń kalendarzowych dla wybranych kryteriów</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Analysis Tab -->
+    <div class="tab-pane fade" id="analysis" role="tabpanel">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Podsumowanie notowań</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if analysis_data.stock_summary %}
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Najwyższa cena:</strong></td>
+                                <td>{{ analysis_data.stock_summary.max_price|floatformat:2 }} PLN</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Najniższa cena:</strong></td>
+                                <td>{{ analysis_data.stock_summary.min_price|floatformat:2 }} PLN</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Średnia cena:</strong></td>
+                                <td>{{ analysis_data.stock_summary.avg_price|floatformat:2 }} PLN</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Całkowity wolumen:</strong></td>
+                                <td>{{ analysis_data.stock_summary.total_volume|default:"Brak danych" }}</td>
+                            </tr>
+                        </table>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-bar fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Brak danych do analizy</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Aktywność według dni</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if analysis_data.daily_activity %}
+                        <div class="chart-container" style="height: 200px;">
+                            <!-- Placeholder for chart - would need chart library like Chart.js -->
+                            <div class="d-flex align-items-center justify-content-center h-100 bg-light rounded">
+                                <div class="text-center">
+                                    <i class="fas fa-chart-area fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">Wykres aktywności</p>
+                                    <small class="text-muted">(wymaga implementacji Chart.js)</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-area fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">Brak danych aktywności</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Top spółki według aktywności</h5>
+            </div>
+            <div class="card-body">
+                {% if analysis_data.top_companies %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Nazwa</th>
+                                <th>Liczba notowań</th>
+                                <th>Ostatnia aktualizacja</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in analysis_data.top_companies %}
+                            <tr style="cursor: pointer;" onclick="window.location.href='/users/management/companies/{{ company.symbol }}/'">
+                                <td><strong>{{ company.symbol }}</strong></td>
+                                <td>{{ company.name|default:"Brak nazwy" }}</td>
+                                <td>
+                                    <span class="badge bg-primary">-</span>
+                                </td>
+                                <td>{{ company.updated_at|localtime|date:"d.m.Y H:i"|default:"Brak" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-building fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">Brak danych do analizy</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Paginacja" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{{ filter_params }}">Pierwsza</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{{ filter_params }}">Poprzednia</a>
+            </li>
+        {% endif %}
+        
+        <li class="page-item active">
+            <span class="page-link">Strona {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        
+        {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{{ filter_params }}">Następna</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{{ filter_params }}">Ostatnia</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh data every 5 minutes
+    setInterval(refreshData, 300000);
+});
+
+function refreshData() {
+    showToast('Odświeżanie danych...', 'info');
+    
+    fetch('/users/management/data-browser/refresh/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Dane zostały odświeżone', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast('Błąd podczas odświeżania danych', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Błąd połączenia', 'error');
+    });
+}
+
+function exportData() {
+    const form = document.getElementById('filter-form');
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+    
+    showToast('Przygotowywanie eksportu...', 'info');
+    
+    // Create download link
+    const downloadUrl = `/users/management/data-browser/export/?${params.toString()}`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `gpw_data_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast('Eksport został rozpoczęty', 'success');
+}
+
+function clearFilters() {
+    document.getElementById('filter-form').reset();
+    document.getElementById('filter-form').submit();
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

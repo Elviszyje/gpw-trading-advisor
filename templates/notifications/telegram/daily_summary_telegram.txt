@@ -1,0 +1,19 @@
+📊 *Daily Summary* \- {{ date|date:"M j" }}
+
+*Market:* {% if market_status == 'Open' %}🟢 Open{% else %}🔴 Closed{% endif %}
+
+📈 *Today's Signals:*
+• Total: *{{ total_signals }}*
+• Buy: *{{ buy_signals }}* 📈
+• Sell: *{{ sell_signals }}* 📉
+
+{% if signals %}*Top Signals:*
+{% for signal in signals|slice:":5" %}{{ forloop.counter }}\. *{{ signal.stock.symbol }}* \- {{ signal.signal_type|upper }} \({{ signal.confidence }}%\)
+{% endfor %}{% else %}No signals generated today\.{% endif %}
+
+{% if total_signals > 0 %}*Activity:* {% if buy_signals > sell_signals %}Buy signals dominated{% elif sell_signals > buy_signals %}Sell signals prevalent{% else %}Mixed activity{% endif %}{% else %}*Quiet day* \- Low volatility market{% endif %}
+
+🔮 *Tomorrow:* Monitor watchlist, review positions
+
+\-\-\-
+{{ site_name }}

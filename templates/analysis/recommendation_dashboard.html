@@ -1,0 +1,522 @@
+{% extends 'main/base.html' %}
+
+{% block title %}Recommendation Performance Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .accuracy-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: bold;
+        display: inline-block;
+        margin: 0.2rem;
+    }
+    
+    .accuracy-excellent {
+        background: #28a745;
+        color: white;
+    }
+    
+    .accuracy-good {
+        background: #20c997;
+        color: white;
+    }
+    
+    .accuracy-average {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    .accuracy-poor {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .recommendation-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    
+    .recommendation-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .signal-type-buy {
+        border-left: 4px solid #28a745;
+    }
+    
+    .signal-type-sell {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .signal-type-hold {
+        border-left: 4px solid #ffc107;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    
+    .status-completed {
+        background: #28a745;
+    }
+    
+    .status-pending {
+        background: #ffc107;
+    }
+    
+    .status-error {
+        background: #dc3545;
+    }
+    
+    .performance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .learning-status {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+    
+    .refresh-indicator {
+        display: none;
+        color: #007bff;
+    }
+    
+    .refresh-indicator.active {
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-chart-line me-2"></i>Recommendation Performance Dashboard</h2>
+                    <p class="text-muted">Track ML recommendation accuracy and model learning progress</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary me-2" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt me-1 refresh-indicator"></i>
+                        Refresh Data
+                    </button>
+                    <a href="{% url 'analysis:recommendation_details' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-1"></i>
+                        View All Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+    </div>
+    {% else %}
+
+    <!-- Key Performance Indicators -->
+    <div class="performance-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ accuracy_data.overall_accuracy }}%</div>
+            <div class="stat-label">Overall Accuracy</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-value">{{ accuracy_data.average_roi }}%</div>
+            <div class="stat-label">Average ROI</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-value">{{ total_signals }}</div>
+            <div class="stat-label">Total Signals</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-value">{{ completion_rate|floatformat:1 }}%</div>
+            <div class="stat-label">Completion Rate</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Accuracy Trends -->
+        <div class="col-lg-8">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-area me-2"></i>Accuracy Trends</h5>
+                <canvas id="accuracyTrendChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        
+        <!-- Signal Type Performance -->
+        <div class="col-lg-4">
+            <div class="chart-container">
+                <h5><i class="fas fa-chart-pie me-2"></i>Signal Type Accuracy</h5>
+                <canvas id="signalTypeChart" width="200" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Accuracy Breakdown -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-bullseye me-2"></i>Accuracy by Signal Type</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-4 text-center">
+                            <div class="accuracy-badge {% if accuracy_data.buy_accuracy >= 70 %}accuracy-excellent{% elif accuracy_data.buy_accuracy >= 60 %}accuracy-good{% elif accuracy_data.buy_accuracy >= 50 %}accuracy-average{% else %}accuracy-poor{% endif %}">
+                                BUY {{ accuracy_data.buy_accuracy }}%
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="accuracy-badge {% if accuracy_data.sell_accuracy >= 70 %}accuracy-excellent{% elif accuracy_data.sell_accuracy >= 60 %}accuracy-good{% elif accuracy_data.sell_accuracy >= 50 %}accuracy-average{% else %}accuracy-poor{% endif %}">
+                                SELL {{ accuracy_data.sell_accuracy }}%
+                            </div>
+                        </div>
+                        <div class="col-4 text-center">
+                            <div class="accuracy-badge {% if accuracy_data.hold_accuracy >= 70 %}accuracy-excellent{% elif accuracy_data.hold_accuracy >= 60 %}accuracy-good{% elif accuracy_data.hold_accuracy >= 50 %}accuracy-average{% else %}accuracy-poor{% endif %}">
+                                HOLD {{ accuracy_data.hold_accuracy }}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6><i class="fas fa-brain me-2"></i>Model Learning Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="learning-status">
+                        {% if learning_stats.learning_enabled %}
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h6>Learning Active</h6>
+                            <small>{{ learning_stats.total_learning_instances }} training instances</small>
+                        {% else %}
+                            <i class="fas fa-pause-circle fa-2x mb-2"></i>
+                            <h6>Learning Paused</h6>
+                            <small>Enable in ML Configuration</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6><i class="fas fa-clock me-2"></i>Recent Recommendations</h6>
+                    <a href="{% url 'analysis:recommendation_details' %}" class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_signals %}
+                        <div class="row">
+                            {% for signal in recent_signals %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="recommendation-card card signal-type-{{ signal.signal_type|lower }}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title">{{ signal.stock.symbol }}</h6>
+                                            <span class="badge bg-{{ signal.signal_type|lower }}">{{ signal.signal_type }}</span>
+                                        </div>
+                                        
+                                        <div class="row mb-2">
+                                            <div class="col-6">
+                                                <small class="text-muted">Predicted</small><br>
+                                                <strong>{{ signal.predicted_price|floatformat:2 }}</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">Actual</small><br>
+                                                {% if signal.outcome_price %}
+                                                    <strong>{{ signal.outcome_price|floatformat:2 }}</strong>
+                                                {% else %}
+                                                    <span class="text-muted">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                {% if signal.actual_outcome %}
+                                                    <span class="status-indicator status-completed"></span>
+                                                    {% if signal.prediction_correct %}
+                                                        <span class="text-success">Correct</span>
+                                                    {% else %}
+                                                        <span class="text-danger">Incorrect</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="status-indicator status-pending"></span>
+                                                    <span class="text-warning">Pending</span>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">{{ signal.created_at|timesince }} ago</small>
+                                        </div>
+                                        
+                                        {% if signal.roi_percentage %}
+                                        <div class="mt-2">
+                                            <small class="text-muted">ROI: </small>
+                                            <span class="{% if signal.roi_percentage > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {{ signal.roi_percentage|floatformat:2 }}%
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Recent Recommendations</h5>
+                            <p class="text-muted">Start generating recommendations to see performance data</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+
+<!-- Real-time Update Modal -->
+<div class="modal fade" id="updateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Real-time Performance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="realtimeStats">
+                    Loading...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Initialize charts
+    let accuracyChart, signalChart;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        
+        // Auto-refresh every 5 minutes
+        setInterval(refreshDashboard, 300000);
+    });
+    
+    function initializeCharts() {
+        // Accuracy Trend Chart
+        const accuracyCtx = document.getElementById('accuracyTrendChart').getContext('2d');
+        const trendData = {{ trend_data|safe }};
+        
+        accuracyChart = new Chart(accuracyCtx, {
+            type: 'line',
+            data: {
+                labels: trendData.map(d => d.week),
+                datasets: [{
+                    label: 'Accuracy %',
+                    data: trendData.map(d => d.accuracy),
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'ROI %',
+                    data: trendData.map(d => d.avg_roi),
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Accuracy %'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'ROI %'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+        
+        // Signal Type Chart
+        const signalCtx = document.getElementById('signalTypeChart').getContext('2d');
+        signalChart = new Chart(signalCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['BUY', 'SELL', 'HOLD'],
+                datasets: [{
+                    data: [
+                        {{ accuracy_data.buy_accuracy }},
+                        {{ accuracy_data.sell_accuracy }},
+                        {{ accuracy_data.hold_accuracy }}
+                    ],
+                    backgroundColor: [
+                        '#28a745',
+                        '#dc3545',
+                        '#ffc107'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    function refreshDashboard() {
+        const refreshIcon = document.querySelector('.refresh-indicator');
+        refreshIcon.classList.add('active');
+        
+        // Fetch real-time statistics
+        fetch('{% url "analysis:api_recommendation_stats" %}?days=7')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateRealtimeDisplay(data);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stats:', error);
+            })
+            .finally(() => {
+                refreshIcon.classList.remove('active');
+            });
+    }
+    
+    function updateRealtimeDisplay(data) {
+        // Update main stats
+        const statsCards = document.querySelectorAll('.stat-value');
+        if (statsCards.length >= 4) {
+            statsCards[0].textContent = data.overall_accuracy + '%';
+            statsCards[1].textContent = data.average_roi + '%';
+            statsCards[2].textContent = data.total_signals;
+            statsCards[3].textContent = Math.round((data.completed_signals / data.total_signals) * 100) + '%';
+        }
+        
+        // Show modal with detailed stats
+        showRealtimeModal(data);
+    }
+    
+    function showRealtimeModal(data) {
+        const modalBody = document.getElementById('realtimeStats');
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-6">
+                    <h6>Last ${data.period_days} Days</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Accuracy:</strong> ${data.overall_accuracy}%</li>
+                        <li><strong>Win Rate:</strong> ${data.win_rate}%</li>
+                        <li><strong>Avg ROI:</strong> ${data.average_roi}%</li>
+                        <li><strong>Total Signals:</strong> ${data.total_signals}</li>
+                        <li><strong>Completed:</strong> ${data.completed_signals}</li>
+                    </ul>
+                </div>
+                <div class="col-6">
+                    <h6>Daily Breakdown</h6>
+                    <div style="max-height: 200px; overflow-y: auto;">
+                        ${data.daily_stats.map(day => `
+                            <div class="d-flex justify-content-between mb-1">
+                                <small>${day.date}</small>
+                                <small class="${day.accuracy > 60 ? 'text-success' : day.accuracy > 40 ? 'text-warning' : 'text-danger'}">
+                                    ${day.accuracy}%
+                                </small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('updateModal'));
+        modal.show();
+    }
+    
+    // Auto-refresh every 5 minutes
+    setInterval(refreshDashboard, 300000);
+</script>
+{% endblock %}

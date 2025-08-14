@@ -1,0 +1,134 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Scrape Calendar Events{% endblock %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .calendar-scraping-form {
+            max-width: 600px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .help-text {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .submit-btn {
+            background-color: #417690;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .submit-btn:hover {
+            background-color: #205067;
+        }
+        .info-box {
+            background-color: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="colM">
+    <h1>📅 Scrape Calendar Events</h1>
+    
+    <div class="info-box">
+        <h3>🎯 Enhanced Calendar Scraping</h3>
+        <p>This enhanced system uses the existing CompanyCalendarEvent model with new date change tracking capabilities:</p>
+        <ul>
+            <li><strong>✅ Date Change Tracking:</strong> Automatically detects and tracks date modifications</li>
+            <li><strong>📈 Sentiment Analysis:</strong> Evaluates impact of date changes on investor sentiment</li>
+            <li><strong>🔮 Future Events:</strong> Scrapes events up to 6 months ahead</li>
+            <li><strong>📊 Market Impact:</strong> Assesses event importance and market influence</li>
+        </ul>
+    </div>
+
+    <form method="post" class="calendar-scraping-form">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="start_date">Start Date:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ request.POST.start_date|default:today }}" required>
+            <div class="help-text">Select the starting date for calendar scraping</div>
+        </div>
+
+        <div class="form-group">
+            <label for="end_date">End Date:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ request.POST.end_date|default:six_months_later }}" required>
+            <div class="help-text">Select the ending date (maximum 6 months from start date)</div>
+        </div>
+
+        <div class="form-group">
+            <label for="job_name">Job Name (optional):</label>
+            <input type="text" id="job_name" name="job_name" value="{{ request.POST.job_name|default:'Admin Calendar Scrape' }}" 
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <div class="help-text">Descriptive name for this scraping job</div>
+        </div>
+
+        <button type="submit" class="submit-btn">🚀 Start Calendar Scraping</button>
+    </form>
+
+    <div class="info-box">
+        <h3>📊 Current Calendar Statistics</h3>
+        <p><strong>Total Events:</strong> {{ total_events }} events in database</p>
+        <p><strong>Future Events:</strong> {{ future_events }} upcoming events</p>
+        <p><strong>Date Changes Tracked:</strong> {{ date_changes }} modifications detected</p>
+        <p><strong>Last Update:</strong> {{ last_scrape|default:"Never" }}</p>
+    </div>
+
+    <p><a href="{% url 'admin:scrapers_companycalendarevent_changelist' %}">← Back to Calendar Events</a></p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDate = document.getElementById('start_date');
+    const endDate = document.getElementById('end_date');
+    
+    // Validate date range
+    function validateDateRange() {
+        if (startDate.value && endDate.value) {
+            const start = new Date(startDate.value);
+            const end = new Date(endDate.value);
+            const sixMonthsLater = new Date(start);
+            sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+            
+            if (end > sixMonthsLater) {
+                alert('End date cannot be more than 6 months after start date');
+                endDate.value = sixMonthsLater.toISOString().split('T')[0];
+            }
+            
+            if (end < start) {
+                alert('End date cannot be before start date');
+                endDate.value = startDate.value;
+            }
+        }
+    }
+    
+    startDate.addEventListener('change', validateDateRange);
+    endDate.addEventListener('change', validateDateRange);
+});
+</script>
+{% endblock %}

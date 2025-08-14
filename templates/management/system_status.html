@@ -1,0 +1,593 @@
+{% extends 'main/base.html' %}
+{% load tz %}
+
+{% block title %}Status systemu{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="fas fa-tachometer-alt me-2"></i>Dashboard systemu</h1>
+    <div>
+        <span class="badge bg-{% if system_status.overall_status == 'healthy' %}success{% elif system_status.overall_status == 'warning' %}warning{% else %}danger{% endif %} fs-6">
+            {{ system_status.overall_status|capfirst }}
+        </span>
+    </div>
+</div>
+
+<!-- System Health Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-{% if system_status.database_status == 'healthy' %}success{% else %}danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Baza danych</h6>
+                        <h4 class="mb-0">
+                            <span class="badge bg-{% if system_status.database_status == 'healthy' %}success{% else %}danger{% endif %}">
+                                {% if system_status.database_status == 'healthy' %}Online{% else %}Offline{% endif %}
+                            </span>
+                        </h4>
+                    </div>
+                    <div class="text-{% if system_status.database_status == 'healthy' %}success{% else %}danger{% endif %}">
+                        <i class="fas fa-database fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-{% if system_status.scrapers_status == 'healthy' %}success{% elif system_status.scrapers_status == 'warning' %}warning{% else %}danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Scrapery</h6>
+                        <h4 class="mb-0">{{ system_status.active_scrapers }}/{{ system_status.total_scrapers }}</h4>
+                    </div>
+                    <div class="text-{% if system_status.scrapers_status == 'healthy' %}success{% elif system_status.scrapers_status == 'warning' %}warning{% else %}danger{% endif %}">
+                        <i class="fas fa-robot fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-{% if system_status.data_freshness == 'fresh' %}success{% elif system_status.data_freshness == 'stale' %}warning{% else %}danger{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Aktualność danych</h6>
+                        <h4 class="mb-0">
+                            <span class="badge bg-{% if system_status.data_freshness == 'fresh' %}success{% elif system_status.data_freshness == 'stale' %}warning{% else %}danger{% endif %}">
+                                {{ system_status.data_freshness|capfirst }}
+                            </span>
+                        </h4>
+                    </div>
+                    <div class="text-{% if system_status.data_freshness == 'fresh' %}success{% elif system_status.data_freshness == 'stale' %}warning{% else %}danger{% endif %}">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Użytkownicy online</h6>
+                        <h3 class="mb-0">{{ system_status.online_users }}</h3>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Spółki monitorowane</h6>
+                        <h3 class="mb-0">{{ stats.monitored_companies }}</h3>
+                        <small class="text-muted">z {{ stats.total_companies }} dostępnych</small>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-eye fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Notowania dzisiaj</h6>
+                        <h3 class="mb-0">{{ stats.todays_data }}</h3>
+                        <small class="text-muted">ostatnia aktualizacja: {{ stats.last_update|time:"H:i" }}</small>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-muted">Wydarzenia dzisiaj</h6>
+                        <h3 class="mb-0">{{ stats.todays_events }}</h3>
+                        <small class="text-muted">nadchodzące wydarzenia</small>
+                    </div>
+                    <div class="text-warning">
+                        <i class="fas fa-calendar-day fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs mb-4" id="systemTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="performance-tab" data-bs-toggle="tab" 
+                data-bs-target="#performance" type="button" role="tab">
+            <i class="fas fa-chart-area me-1"></i>Wydajność
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="scrapers-tab" data-bs-toggle="tab" 
+                data-bs-target="#scrapers-status" type="button" role="tab">
+            <i class="fas fa-robot me-1"></i>Status scraperów
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="errors-tab" data-bs-toggle="tab" 
+                data-bs-target="#errors" type="button" role="tab">
+            <i class="fas fa-exclamation-triangle me-1"></i>Błędy ({{ recent_errors.count }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="activity-tab" data-bs-toggle="tab" 
+                data-bs-target="#activity" type="button" role="tab">
+            <i class="fas fa-history me-1"></i>Aktywność
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="systemTabsContent">
+    <!-- Performance Tab -->
+    <div class="tab-pane fade show active" id="performance" role="tabpanel">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Użycie zasobów</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <small>CPU</small>
+                                <small>{{ performance.cpu_usage|default:0 }}%</small>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {{ performance.cpu_usage|default:0 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <small>Pamięć</small>
+                                <small>{{ performance.memory_usage|default:0 }}%</small>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {{ performance.memory_usage|default:0 }}%"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <small>Dysk</small>
+                                <small>{{ performance.disk_usage|default:0 }}%</small>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: {{ performance.disk_usage|default:0 }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Statystyki bazy danych</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td>Rozmiar bazy danych:</td>
+                                <td><strong>{{ db_stats.size|default:"N/A" }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Aktywne połączenia:</td>
+                                <td><strong>{{ db_stats.connections|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Zapytania/min:</td>
+                                <td><strong>{{ db_stats.queries_per_minute|default:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Średni czas odpowiedzi:</td>
+                                <td><strong>{{ db_stats.avg_response_time|default:0 }}ms</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrapers Status Tab -->
+    <div class="tab-pane fade" id="scrapers-status" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Status scraperów w czasie rzeczywistym</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="refreshScrapersStatus()">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Scraper</th>
+                                <th>Status</th>
+                                <th>Ostatnie uruchomienie</th>
+                                <th>Następne uruchomienie</th>
+                                <th>Sukces rate</th>
+                                <th>Działania</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scrapers-status-table">
+                            {% for scraper in scrapers_detailed %}
+                            <tr data-scraper-id="{{ scraper.id }}">
+                                <td>
+                                    <strong>{{ scraper.name }}</strong>
+                                    <br><small class="text-muted">{{ scraper.source.name }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if scraper.is_active %}success{% else %}danger{% endif %} status-badge">
+                                        {% if scraper.is_active %}Aktywny{% else %}Nieaktywny{% endif %}
+                                    </span>
+                                    {% if scraper.is_running %}
+                                        <span class="badge bg-info">Uruchomiony</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if scraper.last_run %}
+                                        {{ scraper.last_run|localtime|date:"d.m H:i" }}
+                                        <br><small class="text-muted">{{ scraper.last_run|timesince }} temu</small>
+                                    {% else %}
+                                        <span class="text-muted">Nigdy</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if scraper.next_run %}
+                                        {{ scraper.next_run|localtime|date:"d.m H:i" }}
+                                        <br><small class="text-muted">za {{ scraper.next_run|timeuntil }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Brak</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 60px; height: 20px;">
+                                            <div class="progress-bar bg-{% if scraper.success_rate >= 80 %}success{% elif scraper.success_rate >= 60 %}warning{% else %}danger{% endif %}" 
+                                                 role="progressbar" style="width: {{ scraper.success_rate }}%"></div>
+                                        </div>
+                                        <small>{{ scraper.success_rate }}%</small>
+                                    </div>
+                                </td>
+                                <td class="table-actions">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary run-scraper"
+                                            data-scraper-id="{{ scraper.id }}">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-info view-logs"
+                                            data-scraper-id="{{ scraper.id }}">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Errors Tab -->
+    <div class="tab-pane fade" id="errors" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ostatnie błędy systemu</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_errors %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Czas</th>
+                                <th>Komponent</th>
+                                <th>Poziom</th>
+                                <th>Wiadomość</th>
+                                <th>Działania</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in recent_errors %}
+                            <tr>
+                                <td>
+                                    <strong>{{ error.created_at|date:"d.m H:i:s" }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ error.component|default:"System" }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if error.level == 'ERROR' %}danger{% elif error.level == 'WARNING' %}warning{% else %}info{% endif %}">
+                                        {{ error.level }}
+                                    </span>
+                                </td>
+                                <td>{{ error.message|truncatechars:80 }}</td>
+                                <td>
+                                    {% if error.details %}
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-secondary show-error-details"
+                                                data-details="{{ error.details|escape }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="text-muted">Brak błędów - system działa prawidłowo!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Tab -->
+    <div class="tab-pane fade" id="activity" role="tabpanel">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Ostatnia aktywność systemu</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for activity in recent_activity %}
+                    <div class="timeline-item mb-3">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0">
+                                <div class="timeline-marker bg-{% if activity.type == 'success' %}success{% elif activity.type == 'warning' %}warning{% elif activity.type == 'error' %}danger{% else %}primary{% endif %}">
+                                    <i class="fas fa-{% if activity.type == 'success' %}check{% elif activity.type == 'warning' %}exclamation{% elif activity.type == 'error' %}times{% else %}info{% endif %}"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">{{ activity.title }}</h6>
+                                    <small class="text-muted">{{ activity.timestamp|timesince }} temu</small>
+                                </div>
+                                <p class="mb-0 text-muted">{{ activity.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-history fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Brak aktywności do wyświetlenia</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Details Modal -->
+<div class="modal fade" id="errorDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Szczegóły błędu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="error-details-content" class="bg-light p-3 rounded"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.timeline-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stat-card {
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.progress {
+    height: 8px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-refresh every 30 seconds
+    setInterval(refreshSystemStatus, 30000);
+    
+    // Show error details
+    document.querySelectorAll('.show-error-details').forEach(button => {
+        button.addEventListener('click', function() {
+            const details = this.dataset.details;
+            document.getElementById('error-details-content').textContent = details;
+            new bootstrap.Modal(document.getElementById('errorDetailsModal')).show();
+        });
+    });
+
+    // Run scraper from status page
+    document.querySelectorAll('.run-scraper').forEach(button => {
+        button.addEventListener('click', function() {
+            const scraperId = this.dataset.scraperId;
+            
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            fetch(`/users/management/scrapers/run/${scraperId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Scraper został uruchomiony', 'success');
+                    setTimeout(refreshScrapersStatus, 2000);
+                } else {
+                    showToast('Błąd podczas uruchamiania scrapera', 'error');
+                }
+            })
+            .catch(error => {
+                showToast('Błąd połączenia', 'error');
+            })
+            .finally(() => {
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-play"></i>';
+            });
+        });
+    });
+});
+
+function refreshSystemStatus() {
+    fetch('/users/management/system-status/refresh/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update status indicators without full page reload
+            updateStatusIndicators(data.status);
+        }
+    })
+    .catch(error => {
+        console.log('Status refresh error:', error);
+    });
+}
+
+function refreshScrapersStatus() {
+    fetch('/users/management/scrapers/status/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateScrapersTable(data.scrapers);
+        }
+    })
+    .catch(error => {
+        console.log('Scrapers refresh error:', error);
+    });
+}
+
+function updateStatusIndicators(status) {
+    // Update overall status badge
+    const overallBadge = document.querySelector('.badge.fs-6');
+    if (overallBadge) {
+        overallBadge.className = `badge bg-${status.overall_status === 'healthy' ? 'success' : status.overall_status === 'warning' ? 'warning' : 'danger'} fs-6`;
+        overallBadge.textContent = status.overall_status.charAt(0).toUpperCase() + status.overall_status.slice(1);
+    }
+}
+
+function updateScrapersTable(scrapers) {
+    // Update scrapers table without full reload
+    scrapers.forEach(scraper => {
+        const row = document.querySelector(`tr[data-scraper-id="${scraper.id}"]`);
+        if (row) {
+            const statusBadge = row.querySelector('.status-badge');
+            if (statusBadge) {
+                statusBadge.className = `badge status-badge bg-${scraper.is_active ? 'success' : 'danger'}`;
+                statusBadge.textContent = scraper.is_active ? 'Aktywny' : 'Nieaktywny';
+            }
+        }
+    });
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+</script>
+{% endblock %}

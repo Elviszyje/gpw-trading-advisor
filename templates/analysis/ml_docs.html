@@ -1,0 +1,665 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Dokumentacja ML - GPW Trading Advisor{% endblock %}
+
+{% block extra_css %}
+<style>
+    .doc-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    .doc-nav {
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+    }
+    .doc-nav .nav-link {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 0.25rem;
+    }
+    .doc-nav .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    .code-example {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        margin: 1rem 0;
+        overflow-x: auto;
+    }
+    .api-endpoint {
+        background: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .parameter-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+    .badge-endpoint {
+        font-family: monospace;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-book me-2"></i>
+                    Dokumentacja ML System
+                </h1>
+                <div class="btn-group">
+                    <a href="{% url 'analysis:ml_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Dashboard
+                    </a>
+                    <button class="btn btn-outline-primary" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Drukuj
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Navigation -->
+        <div class="col-lg-3">
+            <div class="doc-nav">
+                <nav class="nav flex-column">
+                    <h6 class="text-muted mb-2">SPIS TREŚCI</h6>
+                    <a class="nav-link active" href="#overview">Przegląd Systemu</a>
+                    <a class="nav-link" href="#features">Cechy ML</a>
+                    <a class="nav-link" href="#models">Modele</a>
+                    <a class="nav-link" href="#api">API Reference</a>
+                    <a class="nav-link" href="#configuration">Konfiguracja</a>
+                    <a class="nav-link" href="#training">Trenowanie</a>
+                    <a class="nav-link" href="#monitoring">Monitoring</a>
+                    <a class="nav-link" href="#troubleshooting">Rozwiązywanie Problemów</a>
+                    <a class="nav-link" href="#examples">Przykłady Użycia</a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="col-lg-9">
+            <!-- Overview -->
+            <section id="overview" class="doc-section">
+                <h2><i class="fas fa-eye me-2"></i>Przegląd Systemu ML</h2>
+                <p class="lead">
+                    System Machine Learning GPW Trading Advisor to zaawansowana platforma do predykcji cen akcji 
+                    wykorzystująca głębokie sieci neuronowe oraz analizę fundamentalną.
+                </p>
+                
+                <h4>Główne Komponenty:</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-brain me-2"></i>SimpleStockPredictor</h6>
+                                <p class="card-text small">Feedforward neural network z 25 cechami wejściowymi dla predykcji intraday.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-exclamation-triangle me-2"></i>AnomalyDetectionNN</h6>
+                                <p class="card-text small">Detektor anomalii do wykrywania nietypowych wzorców rynkowych.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Kluczowe Funkcje:</h6>
+                    <ul class="mb-0">
+                        <li>Predykcja cen z horyzontem 1-24 godzin</li>
+                        <li>Analiza sentymentu newsów</li>
+                        <li>Integracja kalendarza korporacyjnego</li>
+                        <li>Analiza kontekstu rynkowego</li>
+                        <li>Real-time monitoring i logowanie</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Features -->
+            <section id="features" class="doc-section">
+                <h2><i class="fas fa-sliders-h me-2"></i>Cechy Machine Learning</h2>
+                
+                <h4>Podstawowe Cechy Techniczne (10):</h4>
+                <table class="table table-sm parameter-table">
+                    <thead>
+                        <tr>
+                            <th>Cecha</th>
+                            <th>Opis</th>
+                            <th>Zakres</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>session_performance</code></td>
+                            <td>Zmiana ceny od otwarcia sesji</td>
+                            <td>-1.0 do 1.0</td>
+                        </tr>
+                        <tr>
+                            <td><code>high_low_ratio</code></td>
+                            <td>Stosunek maksimum do minimum</td>
+                            <td>1.0+</td>
+                        </tr>
+                        <tr>
+                            <td><code>price_range_position</code></td>
+                            <td>Pozycja w zakresie dziennym</td>
+                            <td>0.0 do 1.0</td>
+                        </tr>
+                        <tr>
+                            <td><code>volume_ratio</code></td>
+                            <td>Wolumen vs średnia z 5 okresów</td>
+                            <td>0.0+</td>
+                        </tr>
+                        <tr>
+                            <td><code>momentum</code></td>
+                            <td>Krótkoterminowa zmiana ceny</td>
+                            <td>-1.0 do 1.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4>Wzmocnione Cechy (25 total):</h4>
+                
+                <h5>📰 Analiza Newsów (5 cech):</h5>
+                <ul>
+                    <li><strong>sentiment_score:</strong> Ważony sentyment newsów (-1 do 1)</li>
+                    <li><strong>news_volume:</strong> Ilość artykułów (0 do 1)</li>
+                    <li><strong>recent_news_impact:</strong> Wpływ dzisiejszych newsów</li>
+                    <li><strong>industry_sentiment:</strong> Sentyment branży</li>
+                    <li><strong>sentiment_trend:</strong> Zmiana sentymentu w czasie</li>
+                </ul>
+                
+                <h5>📅 Wydarzenia Korporacyjne (5 cech):</h5>
+                <ul>
+                    <li><strong>major_event_proximity:</strong> Bliskość ważnych wydarzeń</li>
+                    <li><strong>earnings_proximity:</strong> Bliskość publikacji wyników</li>
+                    <li><strong>dividend_effect:</strong> Wpływ dywidend</li>
+                    <li><strong>date_change_sentiment:</strong> Sentyment zmian terminów</li>
+                    <li><strong>total_event_impact:</strong> Sumaryczny wpływ wydarzeń</li>
+                </ul>
+                
+                <h5>🏢 Kontekst Rynkowy (5 cech):</h5>
+                <ul>
+                    <li><strong>sector_performance:</strong> Wydajność sektora</li>
+                    <li><strong>session_progress:</strong> Postęp sesji (0-1)</li>
+                    <li><strong>day_of_week:</strong> Dzień tygodnia (0-1)</li>
+                    <li><strong>month_effect:</strong> Efekt miesiąca (0-1)</li>
+                    <li><strong>volume_vs_average:</strong> Wolumen vs średnia 20-dniowa</li>
+                </ul>
+            </section>
+
+            <!-- Models -->
+            <section id="models" class="doc-section">
+                <h2><i class="fas fa-cube me-2"></i>Architektura Modeli</h2>
+                
+                <h4>SimpleStockPredictor</h4>
+                <div class="code-example">
+Input Layer: 25 features
+Hidden Layer 1: 128 neurons + BatchNorm + ReLU + Dropout(0.3)
+Hidden Layer 2: 64 neurons + BatchNorm + ReLU + Dropout(0.2)  
+Hidden Layer 3: 32 neurons + BatchNorm + ReLU + Dropout(0.1)
+Output Layer: 1 neuron (price change prediction)
+                </div>
+                
+                <h4>Funkcja Straty i Optymalizator</h4>
+                <div class="code-example">
+Loss Function: MSE (Mean Squared Error)
+Optimizer: Adam (lr=0.001, weight_decay=1e-5)
+Scheduler: ReduceLROnPlateau (patience=5, factor=0.5)
+                </div>
+                
+                <h4>Preprocessing</h4>
+                <ul>
+                    <li><strong>StandardScaler:</strong> Normalizacja cech do rozkładu N(0,1)</li>
+                    <li><strong>Feature Engineering:</strong> Kalkulacja wskaźników technicznych</li>
+                    <li><strong>Missing Data:</strong> Interpolacja i wypełnianie zerami</li>
+                    <li><strong>Outlier Detection:</strong> Usuwanie wartości > 3σ</li>
+                </ul>
+            </section>
+
+            <!-- API Reference -->
+            <section id="api" class="doc-section">
+                <h2><i class="fas fa-code me-2"></i>API Reference</h2>
+                
+                <div class="api-endpoint">
+                    <h5>
+                        <span class="badge bg-success badge-endpoint">GET</span>
+                        <code>/analysis/api/ml/predict/</code>
+                    </h5>
+                    <p>Generuje predykcję dla podanej akcji i sesji.</p>
+                    
+                    <h6>Parametry:</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td><code>stock</code></td>
+                            <td>Symbol akcji (np. "11B")</td>
+                            <td>Wymagany</td>
+                        </tr>
+                        <tr>
+                            <td><code>session</code></td>
+                            <td>ID sesji giełdowej</td>
+                            <td>Wymagany</td>
+                        </tr>
+                    </table>
+                    
+                    <h6>Przykład odpowiedzi:</h6>
+                    <div class="code-example">
+{
+  "current_price": 188.0,
+  "predicted_price": 193.24,
+  "predicted_change_percent": 2.78,
+  "confidence": 0.95,
+  "recommendation": "BUY",
+  "dominant_factors": ["high_volume"],
+  "prediction_factors": {
+    "technical": {...},
+    "news": {...},
+    "calendar": {...},
+    "market": {...}
+  }
+}
+                    </div>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h5>
+                        <span class="badge bg-primary badge-endpoint">POST</span>
+                        <code>/analysis/api/ml/train/</code>
+                    </h5>
+                    <p>Rozpoczyna trenowanie modelu w tle.</p>
+                    
+                    <h6>Body JSON:</h6>
+                    <div class="code-example">
+{
+  "model_type": "price_predictor",
+  "force_retrain": true
+}
+                    </div>
+                </div>
+                
+                <div class="api-endpoint">
+                    <h5>
+                        <span class="badge bg-info badge-endpoint">GET</span>
+                        <code>/analysis/api/ml/training-status/</code>
+                    </h5>
+                    <p>Sprawdza status trenowania.</p>
+                    
+                    <h6>Przykład odpowiedzi:</h6>
+                    <div class="code-example">
+{
+  "training_in_progress": true,
+  "current_epoch": 45,
+  "total_epochs": 100,
+  "train_loss": 0.0023,
+  "val_loss": 0.0031
+}
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration -->
+            <section id="configuration" class="doc-section">
+                <h2><i class="fas fa-cog me-2"></i>Konfiguracja</h2>
+                
+                <h4>Parametry Trenowania</h4>
+                <table class="table parameter-table">
+                    <thead>
+                        <tr>
+                            <th>Parametr</th>
+                            <th>Domyślna</th>
+                            <th>Zakres</th>
+                            <th>Opis</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>epochs</code></td>
+                            <td>100</td>
+                            <td>10-500</td>
+                            <td>Liczba epok trenowania</td>
+                        </tr>
+                        <tr>
+                            <td><code>learning_rate</code></td>
+                            <td>0.001</td>
+                            <td>0.0001-0.01</td>
+                            <td>Szybkość uczenia</td>
+                        </tr>
+                        <tr>
+                            <td><code>batch_size</code></td>
+                            <td>32</td>
+                            <td>8-128</td>
+                            <td>Rozmiar batcha</td>
+                        </tr>
+                        <tr>
+                            <td><code>lookback_days</code></td>
+                            <td>30</td>
+                            <td>7-90</td>
+                            <td>Dni historyczne</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h4>Cechy ML</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                            <label class="form-check-label">
+                                <strong>use_enhanced_features</strong><br>
+                                <small class="text-muted">Włącza wszystkie 25 cech</small>
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                            <label class="form-check-label">
+                                <strong>use_news_analysis</strong><br>
+                                <small class="text-muted">Analiza sentymentu newsów</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                            <label class="form-check-label">
+                                <strong>use_calendar_events</strong><br>
+                                <small class="text-muted">Wydarzenia korporacyjne</small>
+                            </label>
+                        </div>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" checked disabled>
+                            <label class="form-check-label">
+                                <strong>save_predictions</strong><br>
+                                <small class="text-muted">Zapisuj do bazy danych</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Training -->
+            <section id="training" class="doc-section">
+                <h2><i class="fas fa-graduation-cap me-2"></i>Proces Trenowania</h2>
+                
+                <h4>Etapy Trenowania:</h4>
+                <ol>
+                    <li><strong>Przygotowanie Danych</strong>
+                        <ul>
+                            <li>Pobieranie danych historycznych (ostatnie 90 dni)</li>
+                            <li>Ekstrakcja cech technicznych</li>
+                            <li>Integracja newsów i kalendarza</li>
+                            <li>Normalizacja i skalowanie</li>
+                        </ul>
+                    </li>
+                    <li><strong>Podział Danych</strong>
+                        <ul>
+                            <li>80% dane treningowe</li>
+                            <li>20% dane walidacyjne</li>
+                            <li>Stratifikacja czasowa</li>
+                        </ul>
+                    </li>
+                    <li><strong>Trenowanie</strong>
+                        <ul>
+                            <li>Forward pass przez sieć</li>
+                            <li>Kalkulacja straty (MSE)</li>
+                            <li>Backpropagation</li>
+                            <li>Aktualizacja wag (Adam)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Walidacja</strong>
+                        <ul>
+                            <li>Ewaluacja na zbiorze walidacyjnym</li>
+                            <li>Early stopping przy braku poprawy</li>
+                            <li>Zapisanie najlepszego modelu</li>
+                        </ul>
+                    </li>
+                </ol>
+                
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Wymagania:</h6>
+                    <ul class="mb-0">
+                        <li>Minimum 100 próbek treningowych</li>
+                        <li>Dane z ostatnich 30 dni</li>
+                        <li>Co najmniej 20 sesji giełdowych</li>
+                        <li>Poprawne dane OHLCV</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Monitoring -->
+            <section id="monitoring" class="doc-section">
+                <h2><i class="fas fa-chart-area me-2"></i>Monitoring Systemu</h2>
+                
+                <h4>Metryki Wydajności:</h4>
+                <ul>
+                    <li><strong>Accuracy:</strong> Procent poprawnych predykcji kierunku</li>
+                    <li><strong>RMSE:</strong> Root Mean Square Error</li>
+                    <li><strong>MAE:</strong> Mean Absolute Error</li>
+                    <li><strong>Sharpe Ratio:</strong> Wskaźnik ryzyka-zwrotu</li>
+                </ul>
+                
+                <h4>Logi Systemu:</h4>
+                <div class="code-example">
+[09:42:27] INFO - Loaded existing SimpleStockPredictor model (input_size=25)
+[09:42:27] INFO - Loaded existing data scaler
+[09:42:30] SUCCESS - Prediction generated for PKNORLEN (confidence: 94%)
+[09:43:15] WARNING - High volatility detected in banking sector
+[09:44:20] ERROR - Insufficient training data for stock XYZ
+                </div>
+                
+                <h4>Alerty Systemowe:</h4>
+                <ul>
+                    <li><strong>Model Drift:</strong> Spadek accuracy poniżej 80%</li>
+                    <li><strong>Data Quality:</strong> Brakujące lub niepoprawne dane</li>
+                    <li><strong>Performance:</strong> Czas predykcji > 5 sekund</li>
+                    <li><strong>Resource Usage:</strong> Pamięć > 80%</li>
+                </ul>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section id="troubleshooting" class="doc-section">
+                <h2><i class="fas fa-tools me-2"></i>Rozwiązywanie Problemów</h2>
+                
+                <h4>Częste Problemy:</h4>
+                
+                <div class="accordion" id="troubleshootingAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#problem1">
+                                Model nie generuje predykcji
+                            </button>
+                        </h2>
+                        <div id="problem1" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                            <div class="accordion-body">
+                                <strong>Możliwe przyczyny:</strong>
+                                <ul>
+                                    <li>Brak wystarczających danych treningowych</li>
+                                    <li>Model nie został wytrenowany</li>
+                                    <li>Błędy w danych wejściowych</li>
+                                </ul>
+                                <strong>Rozwiązanie:</strong>
+                                <ol>
+                                    <li>Sprawdź dostępność danych: minimum 20 sesji</li>
+                                    <li>Wytrenuj model ponownie</li>
+                                    <li>Sprawdź logi pod kątem błędów</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#problem2">
+                                Niska dokładność predykcji
+                            </button>
+                        </h2>
+                        <div id="problem2" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                            <div class="accordion-body">
+                                <strong>Możliwe przyczyny:</strong>
+                                <ul>
+                                    <li>Niewystarczające dane treningowe</li>
+                                    <li>Zmiana warunków rynkowych</li>
+                                    <li>Źle dobrane hiperparametry</li>
+                                </ul>
+                                <strong>Rozwiązanie:</strong>
+                                <ol>
+                                    <li>Zwiększ ilość danych treningowych</li>
+                                    <li>Włącz wzmocnione cechy</li>
+                                    <li>Dostosuj learning rate</li>
+                                    <li>Przeprowadź ponowne trenowanie</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#problem3">
+                                Trenowanie się nie kończy
+                            </button>
+                        </h2>
+                        <div id="problem3" class="accordion-collapse collapse" data-bs-parent="#troubleshootingAccordion">
+                            <div class="accordion-body">
+                                <strong>Możliwe przyczyny:</strong>
+                                <ul>
+                                    <li>Zbyt wysokie learning rate</li>
+                                    <li>Brak early stopping</li>
+                                    <li>Niewystarczające zasoby</li>
+                                </ul>
+                                <strong>Rozwiązanie:</strong>
+                                <ol>
+                                    <li>Zmniejsz learning rate do 0.0001</li>
+                                    <li>Zmniejsz liczbę epok</li>
+                                    <li>Sprawdź utilization CPU/RAM</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Examples -->
+            <section id="examples" class="doc-section">
+                <h2><i class="fas fa-code-branch me-2"></i>Przykłady Użycia</h2>
+                
+                <h4>1. Podstawowa Predykcja</h4>
+                <div class="code-example">
+# Predykcja dla akcji 11B w sesji 112
+curl -X GET "http://localhost:8000/analysis/api/ml/predict/?stock=11B&session=112"
+
+# Odpowiedź
+{
+  "predicted_change_percent": 2.78,
+  "confidence": 0.95,
+  "recommendation": "BUY"
+}
+                </div>
+                
+                <h4>2. Rozpoczęcie Trenowania</h4>
+                <div class="code-example">
+curl -X POST "http://localhost:8000/analysis/api/ml/train/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_type": "price_predictor",
+    "force_retrain": true
+  }'
+                </div>
+                
+                <h4>3. Sprawdzenie Statusu</h4>
+                <div class="code-example">
+curl -X GET "http://localhost:8000/analysis/api/ml/training-status/"
+                </div>
+                
+                <h4>4. Aktualizacja Konfiguracji</h4>
+                <div class="code-example">
+curl -X POST "http://localhost:8000/analysis/api/ml/config/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "epochs": 150,
+    "learning_rate": 0.0005,
+    "use_enhanced_features": true
+  }'
+                </div>
+                
+                <div class="alert alert-success">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Pro Tips:</h6>
+                    <ul class="mb-0">
+                        <li>Używaj wzmocnionych cech dla lepszej dokładności</li>
+                        <li>Trenuj model regularnie (raz w tygodniu)</li>
+                        <li>Monitoruj logi pod kątem ostrzeżeń</li>
+                        <li>Sprawdzaj confidence score przed podjęciem decyzji</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('.doc-nav .nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+                
+                // Update active link
+                document.querySelectorAll('.doc-nav .nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            }
+        });
+    });
+    
+    // Update active link on scroll
+    window.addEventListener('scroll', function() {
+        const sections = document.querySelectorAll('.doc-section');
+        const navLinks = document.querySelectorAll('.doc-nav .nav-link');
+        
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 100;
+            const sectionHeight = section.offsetHeight;
+            
+            if (window.scrollY >= sectionTop && window.scrollY < sectionTop + sectionHeight) {
+                current = section.getAttribute('id');
+            }
+        });
+        
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

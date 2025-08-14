@@ -1,0 +1,205 @@
+{
+  "market_overview": {
+    "period_days": 7,
+    "total_articles": 189,
+    "analyzed_articles": 22,
+    "coverage_rate": 11.6,
+    "sentiment_distribution": [
+      {
+        "sentiment": "negative",
+        "count": 4
+      },
+      {
+        "sentiment": "very_negative",
+        "count": 1
+      },
+      {
+        "sentiment": "positive",
+        "count": 14
+      },
+      {
+        "sentiment": "neutral",
+        "count": 3
+      }
+    ],
+    "impact_distribution": [
+      {
+        "market_impact": "medium",
+        "count": 17
+      },
+      {
+        "market_impact": "high",
+        "count": 2
+      },
+      {
+        "market_impact": "low",
+        "count": 3
+      }
+    ],
+    "top_mentioned_stocks": [
+      {
+        "symbol": "PKN",
+        "name": "PKN Orlen",
+        "mentions": 17
+      },
+      {
+        "symbol": "PKO",
+        "name": "Bank PKO BP",
+        "mentions": 16
+      },
+      {
+        "symbol": "GPW",
+        "name": "GPW",
+        "mentions": 3
+      },
+      {
+        "symbol": "JSW",
+        "name": "Jastrzębska Spółka Węglowa",
+        "mentions": 1
+      },
+      {
+        "symbol": "WIRTUALNA",
+        "name": "WIRTUALNA",
+        "mentions": 1
+      },
+      {
+        "symbol": "TORPOL",
+        "name": "TORPOL",
+        "mentions": 1
+      }
+    ]
+  },
+  "sentiment_trends": {
+    "granularity": "daily",
+    "period_days": 7,
+    "sentiment_counts": [
+      {
+        "date": "2025-07-21T00:00:00+00:00",
+        "sentiment": "negative",
+        "count": 3
+      },
+      {
+        "date": "2025-07-21T00:00:00+00:00",
+        "sentiment": "neutral",
+        "count": 1
+      },
+      {
+        "date": "2025-07-21T00:00:00+00:00",
+        "sentiment": "positive",
+        "count": 14
+      },
+      {
+        "date": "2025-07-22T00:00:00+00:00",
+        "sentiment": "negative",
+        "count": 1
+      },
+      {
+        "date": "2025-07-22T00:00:00+00:00",
+        "sentiment": "neutral",
+        "count": 2
+      },
+      {
+        "date": "2025-07-22T00:00:00+00:00",
+        "sentiment": "very_negative",
+        "count": 1
+      }
+    ],
+    "sentiment_scores": [
+      {
+        "date": "2025-07-21T00:00:00+00:00",
+        "avg_sentiment": 0.6194444444444445,
+        "article_count": 18
+      },
+      {
+        "date": "2025-07-22T00:00:00+00:00",
+        "avg_sentiment": 0.6,
+        "article_count": 4
+      }
+    ]
+  },
+  "stock_analysis": {
+    "period_days": 7,
+    "stock_count": 2,
+    "stock_performances": [
+      {
+        "symbol": "PKN",
+        "name": "PKN Orlen",
+        "mentions": 17,
+        "avg_sentiment": 0.594,
+        "avg_confidence": 0.862,
+        "total_analyzed": 17
+      },
+      {
+        "symbol": "PKO",
+        "name": "Bank PKO BP",
+        "mentions": 16,
+        "avg_sentiment": 0.587,
+        "avg_confidence": 0.863,
+        "total_analyzed": 15
+      }
+    ]
+  },
+  "industry_analysis": {
+    "period_days": 7,
+    "industries_analyzed": 0,
+    "industry_performance": []
+  },
+  "system_health": {
+    "timestamp": "2025-07-22T07:24:35.168275+00:00",
+    "scraping_performance": {
+      "last_24h_executions": 17,
+      "success_rate": 76.5,
+      "items_processed": 17,
+      "items_created": 17
+    },
+    "ai_analysis_performance": {
+      "analyses_last_24h": 22,
+      "analyses_last_7d": 22,
+      "analysis_coverage": 11.6
+    },
+    "data_quality": {
+      "total_articles": 189,
+      "analyzed_articles": 22,
+      "coverage_percentage": 11.6
+    },
+    "recent_errors": [
+      {
+        "error_message": "",
+        "schedule__name": "News RSS - Market Hours"
+      },
+      {
+        "error_message": "",
+        "schedule__name": "News RSS - Market Hours"
+      },
+      {
+        "error_message": "Unknown command: 'scrape_news_rss'",
+        "schedule__name": "News RSS - Off Hours"
+      },
+      {
+        "error_message": "Unknown command: 'scrape_news_rss'",
+        "schedule__name": "News RSS - Market Hours"
+      }
+    ]
+  },
+  "alerts": {
+    "threshold_sentiment": 0.8,
+    "threshold_impact": 0.7,
+    "positive_alerts": [],
+    "negative_alerts": [
+      {
+        "title": "\"The Atlantic\": prezes Sądu Najwyższego USA przyzwala na autorytarne zapędy Trumpa",
+        "sentiment": "negative",
+        "sentiment_score": -0.8,
+        "impact_score": 0.8,
+        "confidence": 0.9,
+        "published_date": "2025-07-21T18:37:30+00:00",
+        "mentioned_stocks": [
+          "PKN",
+          "PKO"
+        ],
+        "url": "https://stooq.pl/n/?f=1692780"
+      }
+    ],
+    "alert_count": 1
+  }
+}

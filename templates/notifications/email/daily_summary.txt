@@ -1,0 +1,40 @@
+📊 Daily Trading Summary - {{ date|date:"Y-m-d" }}
+
+Hello {{ user.first_name|default:user.username }},
+
+Here's your daily trading summary for {{ date|date:"F j, Y" }}:
+
+Market Overview:
+- Market Status: {{ market_status }}
+- Total Signals Generated: {{ total_signals }}
+- Buy Signals: {{ buy_signals }}
+- Sell Signals: {{ sell_signals }}
+
+{% if signals %}
+Top Trading Signals Today:
+{% for signal in signals %}
+{{ forloop.counter }}. {{ signal.stock.symbol }} - {{ signal.signal_type|upper }} ({{ signal.confidence }}%)
+   Price: {{ signal.price_at_signal }} PLN{% if signal.target_price %} | Target: {{ signal.target_price }} PLN{% endif %}
+{% endfor %}
+{% else %}
+No trading signals were generated today.
+{% endif %}
+
+Market Activity:
+{% if total_signals > 0 %}
+- Most active signal type: {% if buy_signals > sell_signals %}BUY{% elif sell_signals > buy_signals %}SELL{% else %}Mixed{% endif %}
+- Average confidence: {% if signals %}{{ signals|length }} signals processed{% endif %}
+{% else %}
+- Quiet trading day with minimal signal activity
+{% endif %}
+
+Tomorrow's Focus:
+- Continue monitoring your watchlist
+- Review any open positions
+- Check for news updates affecting your holdings
+
+Best regards,
+{{ site_name }} Team
+
+---
+This daily summary was sent to {{ user.email }}. To update your notification preferences, please log in to your account.

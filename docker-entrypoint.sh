@@ -11,7 +11,7 @@ echo -e "${GREEN}🚀 Starting GPW Trading Advisor${NC}"
 
 # Wait for PostgreSQL
 echo -e "${YELLOW}⏳ Waiting for PostgreSQL...${NC}"
-until pg_isready -h ${DB_HOST} -p ${DB_PORT:-5432} -U ${DB_USER}; do
+until pg_isready -h ${DATABASE_HOST} -p ${DATABASE_PORT:-5432} -U ${DATABASE_USER}; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 2
 done

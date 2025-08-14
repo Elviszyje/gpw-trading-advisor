@@ -18,7 +18,14 @@ from .models import TradingSignal, PredictionResult, StockSymbol, TradingSession
 from .performance_tracking import SignalPerformanceAnalyzer
 from .daily_trading_performance import DailyTradingPerformanceAnalyzer
 from .ml_recommendation_feedback import MLRecommendationFeedbackSystem
-from .ml_engine import RecommendationFeedbackTracker
+
+# Conditionally import ML components if torch is available
+try:
+    from .ml_engine import RecommendationFeedbackTracker
+    ML_ENGINE_AVAILABLE = True
+except ImportError:
+    ML_ENGINE_AVAILABLE = False
+    RecommendationFeedbackTracker = None
 
 import logging
 logger = logging.getLogger(__name__)
@@ -171,6 +178,11 @@ def learning_analytics(request):
     Analytics page showing model learning progress and effectiveness
     """
     try:
+        if not ML_ENGINE_AVAILABLE:
+            return render(request, 'analysis/learning_analytics.html', {
+                'error': 'ML engine not available. Please install torch and related dependencies.'
+            })
+        
         # Get feedback tracker instance
         feedback_tracker = RecommendationFeedbackTracker()
         

@@ -45,11 +45,11 @@ services:
       - .env
     environment:
       - DEBUG=True
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER:-gpw_user}
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-gpw_password}
-      - DB_NAME=${POSTGRES_DB:-gpw_advisor_db}
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=gpw_user
+      - DATABASE_PASSWORD=gpw_password
+      - DATABASE_NAME=gpw_advisor_db
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -71,7 +71,11 @@ services:
       - ./logs:/app/logs
     environment:
       - DEBUG=True
-      - DB_HOST=db
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=gpw_user
+      - DATABASE_PASSWORD=gpw_password
+      - DATABASE_NAME=gpw_advisor_db
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -93,7 +97,11 @@ services:
       - ./logs:/app/logs
     environment:
       - DEBUG=True
-      - DB_HOST=db
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_USER=gpw_user
+      - DATABASE_PASSWORD=gpw_password
+      - DATABASE_NAME=gpw_advisor_db
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0

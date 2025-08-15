@@ -25,7 +25,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     ports:
@@ -53,7 +53,8 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=db
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -83,7 +84,8 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=db
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
@@ -109,7 +111,8 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=db
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0

@@ -249,6 +249,16 @@ class QuickSetupForm(forms.Form):
 class NotificationPreferencesForm(forms.ModelForm):
     """Form for notification preferences"""
     
+    telegram_chat_id = forms.CharField(
+        max_length=50,
+        required=False,
+        help_text="Twój Telegram Chat ID. Aby go uzyskać, napisz do @GPWTradingBot komendę /start",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'np. 123456789'
+        })
+    )
+    
     class Meta:
         model = NotificationPreferences
         fields = [
@@ -298,6 +308,33 @@ class NotificationPreferencesForm(forms.ModelForm):
                 'class': 'form-control'
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        """Initialize form with user's telegram_chat_id"""
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        if self.user and hasattr(self.user, 'telegram_chat_id'):
+            self.fields['telegram_chat_id'].initial = self.user.telegram_chat_id
+
+    def save(self, commit=True):
+        """Save form and update user's telegram_chat_id"""
+        instance = super().save(commit=commit)
+        
+        if self.user and 'telegram_chat_id' in self.cleaned_data:
+            telegram_chat_id = self.cleaned_data['telegram_chat_id'].strip()
+            if telegram_chat_id != self.user.telegram_chat_id:
+                self.user.telegram_chat_id = telegram_chat_id or None
+                self.user.save(update_fields=['telegram_chat_id'])
+        
+        return instance
+
+    def clean_telegram_chat_id(self):
+        """Validate telegram_chat_id"""
+        chat_id = self.cleaned_data.get('telegram_chat_id', '').strip()
+        if chat_id and not chat_id.isdigit():
+            raise forms.ValidationError("Chat ID musi być liczbą (np. 123456789)")
+        return chat_id
 
 
 class UserProfileForm(forms.ModelForm):

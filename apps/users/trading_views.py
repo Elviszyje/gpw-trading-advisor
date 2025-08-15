@@ -99,14 +99,14 @@ def notification_preferences_view(request):
         preferences = NotificationPreferences.objects.create(user=user)
     
     if request.method == 'POST':
-        form = NotificationPreferencesForm(request.POST, instance=preferences)
+        form = NotificationPreferencesForm(request.POST, instance=preferences, user=user)
         if form.is_valid():
             form.save()
             messages.success(request, '🔔 Preferencje powiadomień zostały zaktualizowane!')
             logger.info(f"User {user.username} updated notification preferences")
             return redirect('users:notification_preferences')
     else:
-        form = NotificationPreferencesForm(instance=preferences)
+        form = NotificationPreferencesForm(instance=preferences, user=user)
     
     context = {
         'form': form,

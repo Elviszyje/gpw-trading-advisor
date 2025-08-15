@@ -4,6 +4,35 @@
 
 {% block extra_css %}
 <style>
+    /* Styles for info-box variants */
+    .info-box.success {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%) !important;
+        border: 1px solid #4caf50 !important;
+    }
+    
+    .info-box.success h4 {
+        color: #2e7d32 !important;
+    }
+    
+    .info-box.warning {
+        background: linear-gradient(135deg, #fff8e1 0%, #fffde7 100%) !important;
+        border: 1px solid #ff9800 !important;
+    }
+    
+    .info-box.warning h4 {
+        color: #f57c00 !important;
+    }
+    
+    .info-box ol {
+        margin: 10px 0 0 20px;
+        color: #424242;
+    }
+    
+    .info-box ol li {
+        margin-bottom: 5px;
+        line-height: 1.4;
+    }
+
     .notifications-container {
         max-width: 800px;
         margin: 30px auto;
@@ -323,16 +352,39 @@
             </div>
             
             {% if user.telegram_chat_id %}
-                <div class="info-box">
+                <div class="info-box success">
                     <h4>✅ Telegram połączony</h4>
-                    <p>Twoje konto jest już połączone z Telegram. Chat ID: {{ user.telegram_chat_id }}</p>
+                    <p>Twoje konto jest już połączone z Telegram. Chat ID: <strong>{{ user.telegram_chat_id }}</strong></p>
+                    <p><small>Możesz zmienić Chat ID poniżej jeśli potrzebujesz.</small></p>
                 </div>
             {% else %}
-                <div class="info-box">
+                <div class="info-box warning">
                     <h4>📲 Połącz z Telegram</h4>
-                    <p>Aby otrzymywać powiadomienia, musisz najpierw połączyć konto z Telegram Bot. Wyszukaj @GPWTradingBot i wyślij komendę /start</p>
+                    <p>Aby otrzymywać powiadomienia, musisz najpierw uzyskać swój Chat ID z Telegram Bot.</p>
+                    <ol>
+                        <li>Wyszukaj <strong>@GPWTradingBot</strong> w Telegram</li>
+                        <li>Wyślij komendę <strong>/start</strong></li>
+                        <li>Bot wyśle Ci Twój Chat ID - wpisz go poniżej</li>
+                    </ol>
                 </div>
             {% endif %}
+            
+            <div class="form-group mt-3">
+                <label for="{{ form.telegram_chat_id.id_for_label }}" class="form-label">
+                    <strong>Telegram Chat ID</strong>
+                </label>
+                {{ form.telegram_chat_id }}
+                {% if form.telegram_chat_id.help_text %}
+                    <div class="form-text">{{ form.telegram_chat_id.help_text }}</div>
+                {% endif %}
+                {% if form.telegram_chat_id.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in form.telegram_chat_id.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
         </div>
 
         <!-- Notification Types -->

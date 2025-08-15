@@ -1,0 +1,19 @@
+🧪 Test Powiadomienia
+
+Cześć {{ user.first_name|default:user.username }}! 👋
+
+To jest testowe powiadomienie z GPW Trading Advisor.
+
+✅ Twoje powiadomienia Telegram działają poprawnie!
+🕐 Czas: {{ timestamp|date:"Y-m-d H:i:s" }}
+
+📊 Możesz teraz otrzymywać:
+• 📈 Alerty cenowe
+• 💹 Rekomendacje handlowe  
+• 📊 Dzienny raport
+• 🔔 Powiadomienia o trendach
+
+Życzymy udanych inwestycji! 💪
+
+---
+{{ site_name }}

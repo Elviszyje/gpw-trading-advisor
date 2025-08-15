@@ -32,6 +32,7 @@ urlpatterns = [
     path('trading-preferences/', trading_views.trading_preferences_view, name='trading_preferences'),
     path('risk-management/', trading_views.risk_management_view, name='risk_management'),
     path('notification-preferences/', trading_views.notification_preferences_view, name='notification_preferences'),
+    path('send-test-notification/', trading_views.send_test_notification, name='send_test_notification'),
     path('preferences-wizard/', trading_views.preferences_wizard_view, name='preferences_wizard'),
     path('preferences-summary/', trading_views.preferences_summary_view, name='preferences_summary'),
     path('reset-preferences/', trading_views.reset_preferences_view, name='reset_preferences'),

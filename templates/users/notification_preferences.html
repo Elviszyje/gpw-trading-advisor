@@ -267,6 +267,26 @@
         color: white;
     }
     
+    .btn-test-notification {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-test-notification:hover {
+        background: linear-gradient(135deg, #218838 0%, #1e7e34 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+    
     .info-box {
         background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
         border: 1px solid #bbdefb;
@@ -356,6 +376,16 @@
                     <h4>✅ Telegram połączony</h4>
                     <p>Twoje konto jest już połączone z Telegram. Chat ID: <strong>{{ user.telegram_chat_id }}</strong></p>
                     <p><small>Możesz zmienić Chat ID poniżej jeśli potrzebujesz.</small></p>
+                    
+                    <!-- Test notification button -->
+                    <div style="margin-top: 15px;">
+                        <form method="post" action="{% url 'users:send_test_notification' %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-test-notification" onclick="return confirm('Czy chcesz wysłać testowe powiadomienie na Telegram?')">
+                                🧪 Wyślij Test
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% else %}
                 <div class="info-box warning">

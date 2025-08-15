@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from typing import cast
 from decimal import Decimal
 import json
@@ -114,6 +115,60 @@ def notification_preferences_view(request):
     }
     
     return render(request, 'users/notification_preferences.html', context)
+
+
+@login_required
+def send_test_notification(request):
+    """Send test notification to user's Telegram."""
+    user = cast(User, request.user)
+    
+    if request.method == 'POST':
+        if not user.telegram_chat_id:
+            messages.error(request, '❌ Brak skonfigurowanego Telegram Chat ID! Najpierw wprowadź swój Chat ID.')
+            return redirect('users:notification_preferences')
+        
+        try:
+            import asyncio
+            from apps.notifications.enhanced_notification_service import EnhancedNotificationService
+            
+            # Create test notification context
+            test_context = {
+                'user': user,
+                'test_message': True,
+                'timestamp': timezone.now(),
+                'site_name': 'GPW Trading Advisor'
+            }
+            
+            async def send_test():
+                service = EnhancedNotificationService()
+                
+                # Ensure we have a chat_id (type check)
+                chat_id = str(user.telegram_chat_id) if user.telegram_chat_id else None
+                if not chat_id:
+                    return False
+                
+                success = await service._send_telegram_notification(
+                    chat_id=chat_id,
+                    template_name='test_notification',
+                    context=test_context
+                )
+                return success
+            
+            # Run async function
+            success = asyncio.run(send_test())
+            
+            if success:
+                messages.success(request, '🎉 Testowe powiadomienie zostało wysłane na Telegram!')
+                logger.info(f"Test notification sent to user {user.username} ({user.telegram_chat_id})")
+            else:
+                messages.error(request, '❌ Nie udało się wysłać testowego powiadomienia. Sprawdź Chat ID.')
+                logger.error(f"Failed to send test notification to user {user.username}")
+                
+        except Exception as e:
+            messages.error(request, f'❌ Błąd podczas wysyłania powiadomienia: {str(e)}')
+            logger.error(f"Error sending test notification to user {user.username}: {e}")
+    
+    return redirect('users:notification_preferences')
 
 
 @login_required

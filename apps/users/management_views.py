@@ -3,7 +3,7 @@ Management interface views for business operations - Simplified version
 """
 
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -1153,7 +1153,7 @@ def refresh_logs_ajax(request):
 
 
 @login_required
-@staff_member_required
+@user_passes_test(lambda u: u.is_superuser)
 def import_historical_data(request):
     """Import historical stock data from TXT files"""
     if request.method == 'POST':

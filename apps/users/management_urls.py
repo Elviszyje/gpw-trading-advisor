@@ -36,6 +36,7 @@ urlpatterns = [
     
     # Data browser
     path('data/', management_views.data_browser, name='data_browser'),
+    path('data-browser/refresh/', management_views.data_browser_refresh, name='data_browser_refresh'),
     path('data/export/', management_views.export_data, name='export_data'),
     path('data/import/', management_views.import_historical_data, name='import_historical_data'),
     

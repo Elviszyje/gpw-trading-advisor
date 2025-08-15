@@ -646,6 +646,43 @@ def data_browser(request):
     return render(request, 'management/data_browser.html', context)
 
 
+@login_required  
+@require_POST
+def data_browser_refresh(request):
+    """Refresh data browser statistics via AJAX"""
+    try:
+        # Basic statistics
+        companies_count = StockSymbol.objects.count()
+        stock_data_count = StockData.objects.count() if StockData else 0
+        events_count = CompanyCalendarEvent.objects.count() if CompanyCalendarEvent else 0
+        
+        # Get latest data timestamp
+        last_update = timezone.now()
+        if StockData:
+            latest_stock_data = StockData.objects.order_by('-created_at').first()
+            if latest_stock_data:
+                last_update = latest_stock_data.created_at
+        
+        stats = {
+            'companies_count': companies_count,
+            'stock_data_count': stock_data_count,
+            'events_count': events_count,
+            'last_update': last_update.isoformat(),
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'stats': stats,
+            'message': 'Statystyki zostały odświeżone'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
 @login_required
 @require_POST  
 def export_data(request):

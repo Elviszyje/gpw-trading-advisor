@@ -87,6 +87,11 @@ if ML_VIEWS_AVAILABLE:
         # Stock-specific ML prediction
         path('stock/<str:symbol>/predict/', ml_views.generate_ml_prediction, name='generate_ml_prediction'),
     ]
+else:
+    # Fallback ML URL patterns when torch is not available
+    ml_urlpatterns = [
+        path('ml/', views.ml_dashboard_unavailable, name='ml_dashboard'),
+    ]
 
 # Combine all URL patterns
 urlpatterns = base_urlpatterns + ml_urlpatterns

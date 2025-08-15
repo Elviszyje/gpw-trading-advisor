@@ -410,3 +410,11 @@ def ml_docs(request):
     ML documentation page.
     """
     return render(request, 'analysis/ml_docs.html')
+
+
+@login_required 
+def ml_dashboard_unavailable(request):
+    """
+    Fallback ML dashboard view when PyTorch is not available.
+    """
+    return render(request, 'analysis/ml_unavailable.html')

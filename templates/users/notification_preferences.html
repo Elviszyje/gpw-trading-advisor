@@ -337,13 +337,13 @@
         <div class="notification-card">
             <h2 class="section-title">
                 <span class="section-icon">📱</span>
-                Powiadomienia Telegram
+                Telegram
             </h2>
             
             <div class="notification-toggle {% if form.telegram_enabled.value %}active{% endif %}" data-toggle="telegram_enabled">
                 <div class="toggle-info">
-                    <div class="toggle-title">Włącz powiadomienia Telegram</div>
-                    <div class="toggle-description">Otrzymuj powiadomienia na Telegram Bot</div>
+                    <div class="toggle-title">Powiadomienia Telegram</div>
+                    <div class="toggle-description">Włącz otrzymywanie powiadomień poprzez Telegram Bot</div>
                 </div>
                 <label class="switch">
                     {{ form.telegram_enabled }}
@@ -390,14 +390,14 @@
         <!-- Notification Types -->
         <div class="notification-card">
             <h2 class="section-title">
-                <span class="section-icon">📈</span>
-                Typy Powiadomień
+                <span class="section-icon">🔔</span>
+                Rodzaje Powiadomień
             </h2>
             
             <div class="notification-toggle {% if form.daily_summary.value %}active{% endif %}" data-toggle="daily_summary">
                 <div class="toggle-info">
-                    <div class="toggle-title">Codzienne podsumowanie</div>
-                    <div class="toggle-description">Dzienny raport z rynku i Twojego watchlist</div>
+                    <div class="toggle-title">Dzienny Raport</div>
+                    <div class="toggle-description">Otrzymuj codzienne podsumowanie rekomendacji i wyników rynku</div>
                 </div>
                 <label class="switch">
                     {{ form.daily_summary }}
@@ -407,8 +407,8 @@
             
             <div class="notification-toggle {% if form.stock_alerts.value %}active{% endif %}" data-toggle="stock_alerts">
                 <div class="toggle-info">
-                    <div class="toggle-title">Alerty cenowe</div>
-                    <div class="toggle-description">Powiadomienia o osiągnięciu celów cenowych</div>
+                    <div class="toggle-title">Alerty Akcji</div>
+                    <div class="toggle-description">Powiadomienia o nowych rekomendacjach kupna/sprzedaży</div>
                 </div>
                 <label class="switch">
                     {{ form.stock_alerts }}
@@ -418,8 +418,8 @@
             
             <div class="notification-toggle {% if form.price_targets.value %}active{% endif %}" data-toggle="price_targets">
                 <div class="toggle-info">
-                    <div class="toggle-title">Cele cenowe</div>
-                    <div class="toggle-description">Powiadomienia o sygnałach kupna/sprzedaży</div>
+                    <div class="toggle-title">Cele Cenowe</div>
+                    <div class="toggle-description">Alerty gdy akcje osiągają wyznaczone cele cenowe</div>
                 </div>
                 <label class="switch">
                     {{ form.price_targets }}
@@ -429,8 +429,8 @@
             
             <div class="notification-toggle {% if form.trend_changes.value %}active{% endif %}" data-toggle="trend_changes">
                 <div class="toggle-info">
-                    <div class="toggle-title">Zmiany trendu</div>
-                    <div class="toggle-description">Powiadomienia o istotnych zmianach trendu</div>
+                    <div class="toggle-title">Zmiany Trendu</div>
+                    <div class="toggle-description">Powiadomienia o istotnych zmianach w trendach akcji</div>
                 </div>
                 <label class="switch">
                     {{ form.trend_changes }}
@@ -440,8 +440,8 @@
             
             <div class="notification-toggle {% if form.volume_alerts.value %}active{% endif %}" data-toggle="volume_alerts">
                 <div class="toggle-info">
-                    <div class="toggle-title">Alerty wolumenu</div>
-                    <div class="toggle-description">Powiadomienia o nietypowym wolumenie</div>
+                    <div class="toggle-title">Alerty Wolumenu</div>
+                    <div class="toggle-description">Powiadomienia o nietypowo wysokim wolumenie obrotu</div>
                 </div>
                 <label class="switch">
                     {{ form.volume_alerts }}
@@ -454,41 +454,34 @@
         <div class="notification-card">
             <h2 class="section-title">
                 <span class="section-icon">⏰</span>
-                Ustawienia Czasowe
+                Ustawienia Czasu
             </h2>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="{{ form.summary_time.id_for_label }}">
-                        Godzina podsumowania
-                    </label>
+                    <label for="{{ form.summary_time.id_for_label }}" class="form-label">Czas dziennego raportu</label>
                     {{ form.summary_time }}
-                    <div class="help-text">Kiedy chcesz otrzymywać codzienne podsumowanie</div>
+                    <div class="help-text">Godzina o której otrzymasz dzienny raport</div>
                 </div>
             </div>
             
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label" for="{{ form.quiet_hours_start.id_for_label }}">
-                        Początek ciszy
-                    </label>
+                    <label for="{{ form.quiet_hours_start.id_for_label }}" class="form-label">Początek ciszy</label>
                     {{ form.quiet_hours_start }}
-                    <div class="help-text">Od której godziny wstrzymać powiadomienia</div>
+                    <div class="help-text">Od której godziny nie wysyłać powiadomień</div>
                 </div>
-                
                 <div class="form-group">
-                    <label class="form-label" for="{{ form.quiet_hours_end.id_for_label }}">
-                        Koniec ciszy
-                    </label>
+                    <label for="{{ form.quiet_hours_end.id_for_label }}" class="form-label">Koniec ciszy</label>
                     {{ form.quiet_hours_end }}
-                    <div class="help-text">Do której godziny wstrzymać powiadomienia</div>
+                    <div class="help-text">Do której godziny nie wysyłać powiadomień</div>
                 </div>
             </div>
             
             <div class="notification-toggle {% if form.weekend_notifications.value %}active{% endif %}" data-toggle="weekend_notifications">
                 <div class="toggle-info">
-                    <div class="toggle-title">Powiadomienia w weekendy</div>
-                    <div class="toggle-description">Czy wysyłać powiadomienia w soboty i niedziele</div>
+                    <div class="toggle-title">Powiadomienia Weekend</div>
+                    <div class="toggle-description">Otrzymuj powiadomienia także w weekendy</div>
                 </div>
                 <label class="switch">
                     {{ form.weekend_notifications }}
@@ -503,7 +496,7 @@
                 💾 Zapisz Ustawienia
             </button>
             <a href="{% url 'users:preferences_summary' %}" class="btn-secondary">
-                ← Powrót do podsumowania
+                ⬅️ Powrót
             </a>
         </div>
     </form>
@@ -554,562 +547,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
-});
-</script>
-{% endblock %}
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-    
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-    
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: 0.4s;
-        border-radius: 34px;
-    }
-    
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: 0.4s;
-        border-radius: 50%;
-    }
-    
-    input:checked + .slider {
-        background-color: #007bff;
-    }
-    
-    input:focus + .slider {
-        box-shadow: 0 0 1px #007bff;
-    }
-    
-    input:checked + .slider:before {
-        transform: translateX(26px);
-    }
-    
-    .form-group {
-        margin-bottom: 20px;
-    }
-    
-    .form-label {
-        display: block;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #555;
-        font-size: 0.95rem;
-    }
-    
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 2px solid #e8e8e8;
-        border-radius: 8px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        background: #fafafa;
-    }
-    
-    .form-control:focus {
-        border-color: #007bff;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
-        outline: none;
-    }
-    
-    .form-row {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-    
-    .form-row .form-group {
-        flex: 1;
-    }
-    
-    .help-text {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 5px;
-        line-height: 1.4;
-    }
-    
-    .notification-preview {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: 2px solid #dee2e6;
-        border-radius: 12px;
-        padding: 25px;
-        margin-top: 25px;
-    }
-    
-    .preview-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 15px;
-        text-align: center;
-    }
-    
-    .preview-examples {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 15px;
-        margin-top: 20px;
-    }
-    
-    .example-notification {
-        background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    
-    .notification-type {
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: #007bff;
-        margin-bottom: 8px;
-        text-transform: uppercase;
-    }
-    
-    .notification-content {
-        font-size: 0.9rem;
-        color: #333;
-        line-height: 1.4;
-    }
-    
-    .buttons-section {
-        text-align: center;
-        margin-top: 40px;
-        padding-top: 25px;
-        border-top: 2px solid #f8f9fa;
-    }
-    
-    .btn-primary {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        color: white;
-        border: none;
-        padding: 15px 35px;
-        border-radius: 10px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        margin: 0 10px;
-        min-width: 150px;
-    }
-    
-    .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,123,255,0.4);
-    }
-    
-    .btn-secondary {
-        background: #6c757d;
-        color: white;
-        border: none;
-        padding: 12px 25px;
-        border-radius: 8px;
-        font-size: 1rem;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-        margin: 0 10px;
-    }
-    
-    .btn-secondary:hover {
-        background: #5a6268;
-        transform: translateY(-1px);
-        text-decoration: none;
-        color: white;
-    }
-    
-    .error-message {
-        color: #dc3545;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        font-weight: 500;
-    }
-    
-    .info-box {
-        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-        border: 1px solid #bbdefb;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 25px;
-    }
-    
-    .info-box h4 {
-        color: #1976d2;
-        margin-bottom: 10px;
-        font-weight: 600;
-    }
-    
-    .info-box p {
-        margin: 0;
-        color: #424242;
-        line-height: 1.5;
-    }
-    
-    @media (max-width: 768px) {
-        .notifications-container {
-            margin: 20px auto;
-            padding: 15px;
-        }
-        
-        .notification-card {
-            padding: 20px;
-        }
-        
-        .form-row {
-            flex-direction: column;
-            gap: 0;
-        }
-        
-        .notification-toggle {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-        
-        .toggle-info {
-            margin-right: 0;
-        }
-        
-        .preview-examples {
-            grid-template-columns: 1fr;
-        }
-        
-        .buttons-section .btn-primary,
-        .buttons-section .btn-secondary {
-            display: block;
-            margin: 10px auto;
-            width: 100%;
-        }
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="notifications-container">
-    <!-- Header -->
-    <div class="notifications-header">
-        <h1>🔔 Preferencje Powiadomień</h1>
-        <p>Skonfiguruj jak i kiedy chcesz otrzymywać powiadomienia</p>
-    </div>
-
-    <form method="post" id="notificationsForm">
-        {% csrf_token %}
-        
-        <!-- Email Notifications -->
-        <div class="notification-card">
-            <h2 class="section-title">
-                <span class="section-icon">📧</span>
-                Powiadomienia Email
-            </h2>
-            
-            <div class="notification-toggle" data-toggle="email_notifications">
-                <div class="toggle-info">
-                    <div class="toggle-title">{{ form.email_notifications.label }}</div>
-                    <div class="toggle-description">Otrzymuj powiadomienia na adres email</div>
-                </div>
-                <label class="switch">
-                    {{ form.email_notifications }}
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="email-settings" style="display: none;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.email_frequency.id_for_label }}">
-                            {{ form.email_frequency.label }}
-                        </label>
-                        {{ form.email_frequency }}
-                        {% if form.email_frequency.help_text %}
-                            <div class="help-text">{{ form.email_frequency.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.email_time.id_for_label }}">
-                            {{ form.email_time.label }}
-                        </label>
-                        {{ form.email_time }}
-                        {% if form.email_time.help_text %}
-                            <div class="help-text">{{ form.email_time.help_text }}</div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            {% if form.email_notifications.errors %}
-                <div class="error-message">{{ form.email_notifications.errors.0 }}</div>
-            {% endif %}
-        </div>
-
-        <!-- Signal Types -->
-        <div class="notification-card">
-            <h2 class="section-title">
-                <span class="section-icon">📈</span>
-                Typy Sygnałów
-            </h2>
-            
-            <div class="notification-toggle" data-toggle="notify_buy_signals">
-                <div class="toggle-info">
-                    <div class="toggle-title">{{ form.notify_buy_signals.label }}</div>
-                    <div class="toggle-description">Powiadomienia o sygnałach kupna</div>
-                </div>
-                <label class="switch">
-                    {{ form.notify_buy_signals }}
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="notification-toggle" data-toggle="notify_sell_signals">
-                <div class="toggle-info">
-                    <div class="toggle-title">{{ form.notify_sell_signals.label }}</div>
-                    <div class="toggle-description">Powiadomienia o sygnałach sprzedaży</div>
-                </div>
-                <label class="switch">
-                    {{ form.notify_sell_signals }}
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="notification-toggle" data-toggle="notify_portfolio_changes">
-                <div class="toggle-info">
-                    <div class="toggle-title">{{ form.notify_portfolio_changes.label }}</div>
-                    <div class="toggle-description">Powiadomienia o zmianach w portfelu</div>
-                </div>
-                <label class="switch">
-                    {{ form.notify_portfolio_changes }}
-                    <span class="slider"></span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Advanced Settings -->
-        <div class="notification-card">
-            <h2 class="section-title">
-                <span class="section-icon">⚙️</span>
-                Ustawienia Zaawansowane
-            </h2>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label" for="{{ form.min_signal_strength.id_for_label }}">
-                        {{ form.min_signal_strength.label }}
-                    </label>
-                    {{ form.min_signal_strength }}
-                    {% if form.min_signal_strength.help_text %}
-                        <div class="help-text">{{ form.min_signal_strength.help_text }}</div>
-                    {% endif %}
-                    {% if form.min_signal_strength.errors %}
-                        <div class="error-message">{{ form.min_signal_strength.errors.0 }}</div>
-                    {% endif %}
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label" for="{{ form.max_notifications_per_day.id_for_label }}">
-                        {{ form.max_notifications_per_day.label }}
-                    </label>
-                    {{ form.max_notifications_per_day }}
-                    {% if form.max_notifications_per_day.help_text %}
-                        <div class="help-text">{{ form.max_notifications_per_day.help_text }}</div>
-                    {% endif %}
-                    {% if form.max_notifications_per_day.errors %}
-                        <div class="error-message">{{ form.max_notifications_per_day.errors.0 }}</div>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <div class="notification-toggle" data-toggle="quiet_hours_enabled">
-                <div class="toggle-info">
-                    <div class="toggle-title">{{ form.quiet_hours_enabled.label }}</div>
-                    <div class="toggle-description">Wyłącz powiadomienia w określonych godzinach</div>
-                </div>
-                <label class="switch">
-                    {{ form.quiet_hours_enabled }}
-                    <span class="slider"></span>
-                </label>
-            </div>
-            
-            <div class="quiet-hours-settings" style="display: none;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.quiet_hours_start.id_for_label }}">
-                            {{ form.quiet_hours_start.label }}
-                        </label>
-                        {{ form.quiet_hours_start }}
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label" for="{{ form.quiet_hours_end.id_for_label }}">
-                            {{ form.quiet_hours_end.label }}
-                        </label>
-                        {{ form.quiet_hours_end }}
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Info Box -->
-        <div class="info-box">
-            <h4>🎯 Jak działają powiadomienia?</h4>
-            <p>
-                Powiadomienia są wysyłane na podstawie Twoich preferencji handlowych. 
-                Sygnały o wyższej sile będą priorytetowe. Możesz zawsze zmienić te ustawienia 
-                lub czasowo wyłączyć powiadomienia.
-            </p>
-        </div>
-
-        <!-- Notification Preview -->
-        <div class="notification-preview">
-            <h3 class="preview-title">📱 Przykłady Powiadomień</h3>
-            <div class="preview-examples">
-                <div class="example-notification">
-                    <div class="notification-type">Sygnał Kupna</div>
-                    <div class="notification-content">
-                        <strong>PKN ORLEN</strong><br>
-                        Silny sygnał kupna (85%)<br>
-                        Cena: 54.20 PLN (+2.1%)
-                    </div>
-                </div>
-                <div class="example-notification">
-                    <div class="notification-type">Sygnał Sprzedaży</div>
-                    <div class="notification-content">
-                        <strong>CD PROJEKT</strong><br>
-                        Sygnał sprzedaży (78%)<br>
-                        Stop Loss: 142.50 PLN
-                    </div>
-                </div>
-                <div class="example-notification">
-                    <div class="notification-type">Portfel</div>
-                    <div class="notification-content">
-                        <strong>Dzienny Raport</strong><br>
-                        +1.2% (124 PLN)<br>
-                        3 aktywne pozycje
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Buttons -->
-        <div class="buttons-section">
-            <a href="{% url 'users:trading_preferences' %}" class="btn-secondary">
-                ← Wróć do Preferencji
-            </a>
-            <button type="submit" class="btn-primary" id="saveBtn">
-                🔔 Zapisz Ustawienia Powiadomień
-            </button>
-        </div>
-    </form>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Toggle visibility based on checkbox state
-    function toggleSection(checkboxId, sectionClass) {
-        const checkbox = document.querySelector(`input[name="${checkboxId}"]`);
-        const section = document.querySelector(`.${sectionClass}`);
-        
-        if (checkbox && section) {
-            function updateVisibility() {
-                const toggle = checkbox.closest('.notification-toggle');
-                if (checkbox.checked) {
-                    section.style.display = 'block';
-                    if (toggle) toggle.classList.add('active');
-                } else {
-                    section.style.display = 'none';
-                    if (toggle) toggle.classList.remove('active');
-                }
-            }
-            
-            checkbox.addEventListener('change', updateVisibility);
-            updateVisibility(); // Initial state
-        }
-    }
-    
-    // Setup toggles
-    toggleSection('email_notifications', 'email-settings');
-    toggleSection('quiet_hours_enabled', 'quiet-hours-settings');
-    
-    // Update toggle states for all checkboxes
-    document.querySelectorAll('.notification-toggle').forEach(toggle => {
-        const checkbox = toggle.querySelector('input[type="checkbox"]');
-        if (checkbox && checkbox.checked) {
-            toggle.classList.add('active');
-        }
-        
-        if (checkbox) {
-            checkbox.addEventListener('change', function() {
-                if (this.checked) {
-                    toggle.classList.add('active');
-                } else {
-                    toggle.classList.remove('active');
-                }
-            });
-        }
-    });
-    
-    // Form submission
-    const form = document.getElementById('notificationsForm');
-    const saveBtn = document.getElementById('saveBtn');
-    
-    form.addEventListener('submit', function() {
-        saveBtn.innerHTML = '⏳ Zapisywanie...';
-        saveBtn.disabled = true;
-    });
-    
-    // Real-time notification count estimate
-    function updateNotificationEstimate() {
-        const buySignals = document.querySelector('input[name="notify_buy_signals"]').checked;
-        const sellSignals = document.querySelector('input[name="notify_sell_signals"]').checked;
-        const portfolio = document.querySelector('input[name="notify_portfolio_changes"]').checked;
-        const maxPerDay = parseInt(document.querySelector('input[name="max_notifications_per_day"]').value) || 10;
-        
-        let estimate = 0;
-        if (buySignals) estimate += 2;
-        if (sellSignals) estimate += 2;
-        if (portfolio) estimate += 1;
-        
-        estimate = Math.min(estimate, maxPerDay);
-        
-        // Could display this estimate somewhere if needed
-        console.log(`Estimated notifications per day: ${estimate}`);
-    }
-    
-    // Add listeners for notification estimate
-    ['notify_buy_signals', 'notify_sell_signals', 'notify_portfolio_changes', 'max_notifications_per_day']
-        .forEach(name => {
-            const element = document.querySelector(`input[name="${name}"]`);
-            if (element) {
-                element.addEventListener('change', updateNotificationEstimate);
-                element.addEventListener('input', updateNotificationEstimate);
-            }
-        });
-    
-    // Initial estimate
-    updateNotificationEstimate();
 });
 </script>
 {% endblock %}

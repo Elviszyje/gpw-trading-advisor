@@ -29,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Django Web Application (Development)
+  # Django Web Application (Production)
   web:
     build: 
       context: .
@@ -38,9 +38,7 @@ services:
         USER_ID: ${USER_ID:-1000}
         GROUP_ID: ${GROUP_ID:-1000}
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
       - static_files:/app/staticfiles
       - media_files:/app/media
       - log_files:/app/logs
@@ -49,7 +47,7 @@ services:
     env_file:
       - .env
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - DATABASE_USER=gpw_user
@@ -64,18 +62,22 @@ services:
       redis:
         condition: service_healthy
 
-  # Celery Worker (Development)
-  celery:
+  # Celery Worker for background tasks
+  celery_worker:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
     restart: unless-stopped
-    command: celery -A gpw_advisor worker --loglevel=debug --concurrency=1
+    command: celery -A gpw_advisor worker --loglevel=info
     volumes:
-      - .:/app
-      - ./logs:/app/logs
+      - log_files:/app/logs
+    env_file:
+      - .env
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - DATABASE_USER=gpw_user
@@ -90,18 +92,22 @@ services:
       redis:
         condition: service_healthy
 
-  # Celery Beat (Development)
-  celery-beat:
+  # Celery Beat for scheduled tasks
+  celery_beat:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:
+        USER_ID: ${USER_ID:-1000}
+        GROUP_ID: ${GROUP_ID:-1000}
     restart: unless-stopped
-    command: celery -A gpw_advisor beat --loglevel=debug
+    command: celery -A gpw_advisor beat --loglevel=info
     volumes:
-      - .:/app
-      - ./logs:/app/logs
+      - log_files:/app/logs
+    env_file:
+      - .env
     environment:
-      - DEBUG=True
+      - DEBUG=False
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - DATABASE_USER=gpw_user

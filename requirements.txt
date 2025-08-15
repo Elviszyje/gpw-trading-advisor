@@ -56,6 +56,9 @@ wsproto==1.2.0
 # System monitoring
 psutil==5.9.8
 
+# AI services  
+openai==1.56.2
+
 # Production dependencies
 gunicorn==21.2.0
 whitenoise==6.6.0

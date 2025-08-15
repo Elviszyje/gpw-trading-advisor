@@ -40,8 +40,10 @@ RUN apt-get update && apt-get install -y \
     fi \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user with configurable UID/GID for cross-platform compatibility
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+RUN groupadd -g ${GROUP_ID} appuser && useradd -r -u ${USER_ID} -g appuser appuser
 
 # Install Python dependencies
 COPY requirements.txt /app/

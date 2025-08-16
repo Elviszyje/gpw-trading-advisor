@@ -56,6 +56,15 @@ wsproto==1.2.0
 # System monitoring
 psutil==5.9.8
 
+# Machine Learning and AI libraries
+torch==2.7.1
+torchvision==0.22.1
+scikit-learn==1.7.1
+xgboost==3.0.2
+matplotlib==3.10.3
+seaborn==0.13.2
+joblib==1.5.1
+
 # AI services  
 openai==1.56.2
 

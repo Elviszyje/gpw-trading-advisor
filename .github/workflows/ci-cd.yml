@@ -110,11 +110,11 @@ jobs:
     - name: Set up environment
       run: |
         cp .env.example .env
-        echo "DB_HOST=localhost" >> .env
-        echo "DB_PORT=5432" >> .env
-        echo "DB_NAME=test_db" >> .env
-        echo "DB_USER=postgres" >> .env
-        echo "DB_PASSWORD=postgres_test_password" >> .env
+        echo "DATABASE_HOST=localhost" >> .env
+        echo "DATABASE_PORT=5432" >> .env
+        echo "DATABASE_NAME=test_db" >> .env
+        echo "DATABASE_USER=postgres" >> .env
+        echo "DATABASE_PASSWORD=postgres_test_password" >> .env
         echo "REDIS_URL=redis://localhost:6379/0" >> .env
         echo "USE_FILE_LOGGING=False" >> .env
     

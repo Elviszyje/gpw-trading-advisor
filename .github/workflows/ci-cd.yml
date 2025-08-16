@@ -65,7 +65,7 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: postgres_test_password
           POSTGRES_USER: postgres
           POSTGRES_DB: test_db
         options: >-
@@ -114,9 +114,21 @@ jobs:
         echo "DB_PORT=5432" >> .env
         echo "DB_NAME=test_db" >> .env
         echo "DB_USER=postgres" >> .env
-        echo "DB_PASSWORD=postgres" >> .env
+        echo "DB_PASSWORD=postgres_test_password" >> .env
         echo "REDIS_URL=redis://localhost:6379/0" >> .env
         echo "USE_FILE_LOGGING=False" >> .env
+    
+    - name: Wait for PostgreSQL
+      run: |
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL to be ready..."
+          sleep 2
+        done
+        echo "PostgreSQL is ready!"
+    
+    - name: Test database connection
+      run: |
+        PGPASSWORD=postgres_test_password psql -h localhost -U postgres -d test_db -c "SELECT version();"
     
     - name: Run migrations
       run: python manage.py migrate --settings=gpw_advisor.settings

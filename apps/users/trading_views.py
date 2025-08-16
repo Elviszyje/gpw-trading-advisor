@@ -15,11 +15,13 @@ from decimal import Decimal
 import json
 import logging
 
-from .models import User, UserTradingPreferences, NotificationPreferences
+from .models import User, UserTradingPreferences, UserInvestmentPreferences, NotificationPreferences
 from .forms import (
     TradingPreferencesForm, 
     NotificationPreferencesForm, 
-    QuickSetupForm
+    QuickSetupForm,
+    InvestmentPreferencesForm,
+    ModeSelectionForm
 )
 
 logger = logging.getLogger(__name__)
@@ -341,3 +343,186 @@ def reset_preferences_view(request):
         messages.info(request, 'Brak preferencji do zresetowania.')
     
     return redirect('users:trading_preferences')
+
+
+# ================================
+# INVESTMENT PREFERENCES VIEWS
+# ================================
+
+@login_required
+def investment_preferences_view(request):
+    """Investment preferences management view."""
+    user = cast(User, request.user)
+    
+    # Get or create investment preferences
+    try:
+        preferences = UserInvestmentPreferences.objects.get(user=user)
+    except UserInvestmentPreferences.DoesNotExist:
+        preferences = UserInvestmentPreferences.get_default_preferences(user)
+    
+    if request.method == 'POST':
+        form = InvestmentPreferencesForm(request.POST, instance=preferences)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '📈 Preferencje inwestycyjne zostały zaktualizowane!')
+            logger.info(f"User {user.username} updated investment preferences")
+            return redirect('users:investment_preferences')
+    else:
+        form = InvestmentPreferencesForm(instance=preferences)
+    
+    # Calculate investment profile metrics
+    risk_score = preferences.get_risk_score()
+    expected_volatility = preferences.get_expected_volatility()
+    
+    context = {
+        'form': form,
+        'preferences': preferences,
+        'risk_score': risk_score,
+        'expected_volatility': expected_volatility,
+        'risk_score_percent': risk_score * 100,
+    }
+    
+    return render(request, 'users/investment_preferences.html', context)
+
+
+@login_required
+def mode_selection_view(request):
+    """Mode selection view for choosing between trading and investing."""
+    user = cast(User, request.user)
+    
+    if request.method == 'POST':
+        form = ModeSelectionForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, '⚡ Tryb został zaktualizowany!')
+            logger.info(f"User {user.username} updated mode to {user.primary_mode}")
+            
+            # Redirect based on selected mode
+            if user.primary_mode == 'investing':
+                return redirect('users:investment_preferences')
+            elif user.primary_mode == 'trading':
+                return redirect('users:trading_preferences')
+            else:  # hybrid
+                return redirect('users:preferences_summary')
+    else:
+        form = ModeSelectionForm(instance=user)
+    
+    context = {
+        'form': form,
+        'user': user,
+    }
+    
+    return render(request, 'users/mode_selection.html', context)
+
+
+@login_required
+def investment_summary_view(request):
+    """Investment preferences summary view."""
+    user = cast(User, request.user)
+    
+    try:
+        investment_preferences = UserInvestmentPreferences.objects.get(user=user)
+    except UserInvestmentPreferences.DoesNotExist:
+        investment_preferences = None
+    
+    try:
+        trading_preferences = UserTradingPreferences.objects.get(user=user)
+    except UserTradingPreferences.DoesNotExist:
+        trading_preferences = None
+    
+    context = {
+        'user': user,
+        'investment_preferences': investment_preferences,
+        'trading_preferences': trading_preferences,
+        'has_investment_prefs': investment_preferences is not None,
+        'has_trading_prefs': trading_preferences is not None,
+    }
+    
+    return render(request, 'users/investment_summary.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def reset_investment_preferences_view(request):
+    """Reset investment preferences to defaults."""
+    user = cast(User, request.user)
+    
+    try:
+        preferences = UserInvestmentPreferences.objects.get(user=user)
+        preferences.delete()  # This will soft delete
+        
+        # Create new default preferences
+        new_preferences = UserInvestmentPreferences.get_default_preferences(user)
+        
+        messages.success(request, '🔄 Preferencje inwestycyjne zostały zresetowane do wartości domyślnych.')
+        logger.info(f"User {user.username} reset investment preferences")
+        
+    except UserInvestmentPreferences.DoesNotExist:
+        messages.info(request, 'Brak preferencji inwestycyjnych do zresetowania.')
+    
+    return redirect('users:investment_preferences')
+
+
+@login_required
+def investment_wizard_view(request):
+    """Investment setup wizard for new investors."""
+    user = cast(User, request.user)
+    
+    if request.method == 'POST':
+        # Process wizard form data
+        investment_horizon = request.POST.get('investment_horizon')
+        risk_tolerance = request.POST.get('risk_tolerance')
+        capital_amount = request.POST.get('capital_amount')
+        investment_style = request.POST.get('investment_style')
+        
+        try:
+            with transaction.atomic():
+                # Get or create investment preferences
+                preferences, created = UserInvestmentPreferences.objects.get_or_create(
+                    user=user,
+                    defaults=UserInvestmentPreferences.get_default_preferences(user).__dict__
+                )
+                
+                # Update with wizard selections
+                if investment_horizon:
+                    preferences.investment_horizon_months = int(investment_horizon)
+                if risk_tolerance:
+                    preferences.risk_tolerance = risk_tolerance
+                if investment_style:
+                    preferences.investment_style = investment_style
+                
+                # Set appropriate defaults based on selections
+                if risk_tolerance == 'conservative':
+                    preferences.target_annual_return_percentage = Decimal('6.0')
+                    preferences.max_drawdown_percentage = Decimal('10.0')
+                elif risk_tolerance == 'moderate':
+                    preferences.target_annual_return_percentage = Decimal('8.0')
+                    preferences.max_drawdown_percentage = Decimal('15.0')
+                elif risk_tolerance == 'aggressive':
+                    preferences.target_annual_return_percentage = Decimal('12.0')
+                    preferences.max_drawdown_percentage = Decimal('25.0')
+                
+                preferences.save()
+                
+                # Enable investment mode
+                user.investment_mode_enabled = True
+                if user.primary_mode == 'trading':
+                    user.primary_mode = 'hybrid'
+                else:
+                    user.primary_mode = 'investing'
+                user.save()
+                
+                messages.success(request, '🎯 Kreator inwestycyjny został ukończony!')
+                logger.info(f"User {user.username} completed investment wizard")
+                
+                return redirect('users:investment_summary')
+                
+        except Exception as e:
+            logger.error(f"Error in investment wizard for user {user.username}: {e}")
+            messages.error(request, 'Wystąpił błąd podczas konfiguracji. Spróbuj ponownie.')
+    
+    context = {
+        'user': user,
+    }
+    
+    return render(request, 'users/investment_wizard.html', context)

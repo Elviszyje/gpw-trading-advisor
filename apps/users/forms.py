@@ -12,6 +12,7 @@ from apps.users.models import (
     User, 
     UserProfile, 
     UserTradingPreferences, 
+    UserInvestmentPreferences,
     NotificationPreferences
 )
 
@@ -397,3 +398,177 @@ class OnboardingForm(forms.Form):
         required=False,
         label="I have trading experience"
     )
+
+
+class InvestmentPreferencesForm(forms.ModelForm):
+    """Form for long-term investment preferences"""
+    
+    class Meta:
+        model = UserInvestmentPreferences
+        fields = [
+            'investment_horizon_months',
+            'risk_tolerance',
+            'target_annual_return_percentage',
+            'max_drawdown_percentage',
+            'max_single_stock_percentage',
+            'min_portfolio_stocks',
+            'max_portfolio_stocks',
+            'max_sector_percentage',
+            'investment_style',
+            'market_cap_preference',
+            'dividend_preference',
+            'min_dividend_yield',
+            'rebalancing_frequency',
+            'target_cash_percentage',
+            'use_fundamental_analysis',
+            'use_technical_analysis',
+            'use_quantitative_analysis',
+            'esg_focus',
+            'exclude_tobacco',
+            'exclude_gambling',
+            'exclude_alcohol',
+            'exclude_weapons',
+            'benchmark_index',
+        ]
+        
+        widgets = {
+            'investment_horizon_months': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '3',
+                'max': '120',
+                'placeholder': 'Enter months (3-120)'
+            }),
+            'target_annual_return_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '2.0',
+                'max': '30.0',
+                'placeholder': 'e.g. 8.0'
+            }),
+            'max_drawdown_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '5.0',
+                'max': '50.0',
+                'placeholder': 'e.g. 15.0'
+            }),
+            'max_single_stock_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '2.0',
+                'max': '50.0',
+                'placeholder': 'e.g. 10.0'
+            }),
+            'min_portfolio_stocks': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '5',
+                'max': '100',
+                'placeholder': 'e.g. 10'
+            }),
+            'max_portfolio_stocks': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '10',
+                'max': '200',
+                'placeholder': 'e.g. 30'
+            }),
+            'max_sector_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '10.0',
+                'max': '100.0',
+                'placeholder': 'e.g. 25.0'
+            }),
+            'min_dividend_yield': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '0.0',
+                'max': '15.0',
+                'placeholder': 'e.g. 2.0'
+            }),
+            'target_cash_percentage': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'min': '0.0',
+                'max': '50.0',
+                'placeholder': 'e.g. 5.0'
+            }),
+            'risk_tolerance': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'investment_style': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'market_cap_preference': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'dividend_preference': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'rebalancing_frequency': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'benchmark_index': forms.Select(attrs={
+                'class': 'form-control form-select'
+            }),
+            'use_fundamental_analysis': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_technical_analysis': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'use_quantitative_analysis': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'esg_focus': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'exclude_tobacco': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'exclude_gambling': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'exclude_alcohol': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'exclude_weapons': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        
+        help_texts = {
+            'investment_horizon_months': 'How long do you plan to hold investments?',
+            'risk_tolerance': 'Your comfort level with portfolio volatility',
+            'target_annual_return_percentage': 'Expected annual return on your investments',
+            'max_drawdown_percentage': 'Maximum acceptable portfolio decline',
+            'max_single_stock_percentage': 'Maximum allocation to any single stock',
+            'investment_style': 'Your preferred investment approach',
+            'esg_focus': 'Focus on environmentally and socially responsible investments',
+        }
+
+
+class ModeSelectionForm(forms.ModelForm):
+    """Form for selecting trading vs investment mode"""
+    
+    class Meta:
+        model = User
+        fields = ['primary_mode', 'investment_mode_enabled']
+        
+        widgets = {
+            'primary_mode': forms.RadioSelect(attrs={
+                'class': 'form-check-input'
+            }),
+            'investment_mode_enabled': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        
+        labels = {
+            'primary_mode': 'Primary Mode',
+            'investment_mode_enabled': 'Enable Investment Features',
+        }
+        
+        help_texts = {
+            'primary_mode': 'Choose your primary focus: daily trading or long-term investing',
+            'investment_mode_enabled': 'Enable long-term investment analysis and recommendations',
+        }

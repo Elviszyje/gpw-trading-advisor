@@ -1,0 +1,629 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Preferencje Inwestycyjne - GPW2 Trading Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preferences-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .section-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 20px 30px;
+        margin: 0;
+        border-bottom: 3px solid #0056b3;
+    }
+    
+    .section-content {
+        padding: 30px;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 25px;
+        margin-bottom: 30px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .section-title {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 10px;
+        color: #007bff;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #2c3e50;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .risk-indicator {
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        height: 8px;
+        border-radius: 4px;
+        margin: 10px 0;
+        position: relative;
+    }
+    
+    .risk-pointer {
+        position: absolute;
+        top: -5px;
+        width: 18px;
+        height: 18px;
+        background: #fff;
+        border: 3px solid #007bff;
+        border-radius: 50%;
+        transform: translateX(-50%);
+        transition: left 0.3s ease;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .esg-section {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f8f9fa 100%);
+        border: 2px solid #28a745;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .esg-title {
+        color: #28a745;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+    }
+    
+    .form-check {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-check:hover {
+        border-color: #007bff;
+        box-shadow: 0 2px 10px rgba(0,123,255,0.1);
+    }
+    
+    .form-check-input:checked + .form-check-label {
+        color: #007bff;
+        font-weight: 500;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40,167,69,0.3);
+    }
+    
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+    
+    .tooltip-icon {
+        color: #6c757d;
+        margin-left: 5px;
+        cursor: help;
+    }
+    
+    @media (max-width: 768px) {
+        .section-content {
+            padding: 20px;
+        }
+        
+        .form-section {
+            padding: 20px;
+        }
+        
+        .checkbox-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            
+            <div class="preferences-container">
+                <!-- Header -->
+                <div class="section-header">
+                    <h1 class="mb-0">
+                        <i class="fas fa-chart-pie me-3"></i>
+                        Preferencje Inwestycyjne
+                    </h1>
+                    <p class="mb-0 mt-2 opacity-75">
+                        Skonfiguruj swój profil inwestycyjny i cele długoterminowe
+                    </p>
+                </div>
+                
+                <div class="section-content">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Current Stats Row -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ preferences.investment_horizon_months }}</div>
+                                <div class="stats-label">Miesiące</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ risk_score_percent|floatformat:0 }}%</div>
+                                <div class="stats-label">Profil Ryzyka</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ preferences.target_annual_return_percentage }}%</div>
+                                <div class="stats-label">Cel Zwrotu</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ expected_volatility|floatformat:1 }}%</div>
+                                <div class="stats-label">Oczek. Zmienność</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" id="investmentForm">
+                        {% csrf_token %}
+                        
+                        <!-- Investment Goals & Risk -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-target"></i>
+                                Cele Inwestycyjne i Profil Ryzyka
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.investment_horizon_months.id_for_label }}" class="form-label">
+                                            Horyzont Inwestycyjny
+                                            <i class="fas fa-info-circle tooltip-icon" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Na jak długo planujesz zainwestować środki?"></i>
+                                        </label>
+                                        {{ form.investment_horizon_months }}
+                                        <div class="help-text">{{ form.investment_horizon_months.help_text }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.risk_tolerance.id_for_label }}" class="form-label">
+                                            Tolerancja Ryzyka
+                                        </label>
+                                        {{ form.risk_tolerance }}
+                                        <div class="risk-indicator">
+                                            <div class="risk-pointer" id="riskPointer"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.target_annual_return_percentage.id_for_label }}" class="form-label">
+                                            Cel Rocznego Zwrotu (%)
+                                        </label>
+                                        {{ form.target_annual_return_percentage }}
+                                        <div class="help-text">{{ form.target_annual_return_percentage.help_text }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.max_drawdown_percentage.id_for_label }}" class="form-label">
+                                            Maks. Akceptowalna Strata (%)
+                                        </label>
+                                        {{ form.max_drawdown_percentage }}
+                                        <div class="help-text">{{ form.max_drawdown_percentage.help_text }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Portfolio Construction -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-chart-pie"></i>
+                                Konstrukcja Portfela
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.max_single_stock_percentage.id_for_label }}" class="form-label">
+                                            Maks. Udział Jednej Spółki (%)
+                                        </label>
+                                        {{ form.max_single_stock_percentage }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.min_portfolio_stocks.id_for_label }}" class="form-label">
+                                            Min. Liczba Spółek
+                                        </label>
+                                        {{ form.min_portfolio_stocks }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="{{ form.max_portfolio_stocks.id_for_label }}" class="form-label">
+                                            Maks. Liczba Spółek
+                                        </label>
+                                        {{ form.max_portfolio_stocks }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.max_sector_percentage.id_for_label }}" class="form-label">
+                                            Maks. Udział Sektora (%)
+                                        </label>
+                                        {{ form.max_sector_percentage }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.target_cash_percentage.id_for_label }}" class="form-label">
+                                            Docelowy Udział Gotówki (%)
+                                        </label>
+                                        {{ form.target_cash_percentage }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Investment Style -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-palette"></i>
+                                Styl Inwestycyjny
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.investment_style.id_for_label }}" class="form-label">
+                                            Preferowany Styl
+                                        </label>
+                                        {{ form.investment_style }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.market_cap_preference.id_for_label }}" class="form-label">
+                                            Wielkość Spółek
+                                        </label>
+                                        {{ form.market_cap_preference }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dividend Preferences -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-coins"></i>
+                                Preferencje Dywidendowe
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.dividend_preference.id_for_label }}" class="form-label">
+                                            Strategia Dywidendowa
+                                        </label>
+                                        {{ form.dividend_preference }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.min_dividend_yield.id_for_label }}" class="form-label">
+                                            Min. Stopa Dywidendy (%)
+                                        </label>
+                                        {{ form.min_dividend_yield }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Rebalancing -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-sync-alt"></i>
+                                Rebalancing Portfela
+                            </h3>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.rebalancing_frequency.id_for_label }}" class="form-label">
+                                            Częstotliwość
+                                        </label>
+                                        {{ form.rebalancing_frequency }}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.benchmark_index.id_for_label }}" class="form-label">
+                                            Benchmark
+                                        </label>
+                                        {{ form.benchmark_index }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Analysis Preferences -->
+                        <div class="form-section">
+                            <h3 class="section-title">
+                                <i class="fas fa-microscope"></i>
+                                Rodzaje Analizy
+                            </h3>
+                            
+                            <div class="checkbox-grid">
+                                <div class="form-check">
+                                    {{ form.use_fundamental_analysis }}
+                                    <label class="form-check-label" for="{{ form.use_fundamental_analysis.id_for_label }}">
+                                        <i class="fas fa-building me-2 text-primary"></i>
+                                        Analiza Fundamentalna
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.use_technical_analysis }}
+                                    <label class="form-check-label" for="{{ form.use_technical_analysis.id_for_label }}">
+                                        <i class="fas fa-chart-line me-2 text-warning"></i>
+                                        Analiza Techniczna
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.use_quantitative_analysis }}
+                                    <label class="form-check-label" for="{{ form.use_quantitative_analysis.id_for_label }}">
+                                        <i class="fas fa-calculator me-2 text-info"></i>
+                                        Analiza Kwantytatywna
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ESG Preferences -->
+                        <div class="esg-section">
+                            <h3 class="esg-title">
+                                <i class="fas fa-leaf me-2"></i>
+                                Preferencje ESG (Odpowiedzialność Społeczna)
+                            </h3>
+                            
+                            <div class="checkbox-grid">
+                                <div class="form-check">
+                                    {{ form.esg_focus }}
+                                    <label class="form-check-label" for="{{ form.esg_focus.id_for_label }}">
+                                        <i class="fas fa-check-circle me-2 text-success"></i>
+                                        Skupienie na ESG
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.exclude_tobacco }}
+                                    <label class="form-check-label" for="{{ form.exclude_tobacco.id_for_label }}">
+                                        <i class="fas fa-ban me-2 text-danger"></i>
+                                        Wykluczenie tytoniu
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.exclude_gambling }}
+                                    <label class="form-check-label" for="{{ form.exclude_gambling.id_for_label }}">
+                                        <i class="fas fa-ban me-2 text-danger"></i>
+                                        Wykluczenie hazardu
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.exclude_alcohol }}
+                                    <label class="form-check-label" for="{{ form.exclude_alcohol.id_for_label }}">
+                                        <i class="fas fa-ban me-2 text-danger"></i>
+                                        Wykluczenie alkoholu
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check">
+                                    {{ form.exclude_weapons }}
+                                    <label class="form-check-label" for="{{ form.exclude_weapons.id_for_label }}">
+                                        <i class="fas fa-ban me-2 text-danger"></i>
+                                        Wykluczenie broni
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-save btn-lg">
+                                <i class="fas fa-save me-2"></i>
+                                Zapisz Preferencje Inwestycyjne
+                            </button>
+                        </div>
+                        
+                    </form>
+                    
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <a href="{% url 'users:mode_selection' %}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-arrow-left me-2"></i>Powrót do Wyboru Trybu
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'users:investment_summary' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-chart-area me-2"></i>Podsumowanie
+                            </a>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Risk tolerance indicator
+    const riskSelect = document.getElementById('{{ form.risk_tolerance.id_for_label }}');
+    const riskPointer = document.getElementById('riskPointer');
+    
+    function updateRiskIndicator() {
+        const riskValue = riskSelect.value;
+        const riskPositions = {
+            'conservative': '10%',
+            'moderate': '50%',
+            'aggressive': '90%',
+            'growth': '75%',
+            'income': '25%'
+        };
+        
+        if (riskPositions[riskValue]) {
+            riskPointer.style.left = riskPositions[riskValue];
+        }
+    }
+    
+    riskSelect.addEventListener('change', updateRiskIndicator);
+    updateRiskIndicator(); // Initialize
+    
+    // Form validation
+    const form = document.getElementById('investmentForm');
+    form.addEventListener('submit', function(e) {
+        const targetReturn = parseFloat(document.getElementById('{{ form.target_annual_return_percentage.id_for_label }}').value);
+        const maxDrawdown = parseFloat(document.getElementById('{{ form.max_drawdown_percentage.id_for_label }}').value);
+        
+        if (targetReturn > 20 && maxDrawdown < 10) {
+            if (!confirm('Ustawiłeś wysoki cel zwrotu przy niskiej tolerancji strat. Czy jesteś pewien tych ustawień?')) {
+                e.preventDefault();
+            }
+        }
+    });
+    
+    // Dynamic help text based on risk tolerance
+    riskSelect.addEventListener('change', function() {
+        const helpTexts = {
+            'conservative': 'Niskie ryzyko, stabilny wzrost, mniejsza zmienność portfela.',
+            'moderate': 'Zbalansowane podejście, umiarkowane ryzyko i zwroty.',
+            'aggressive': 'Wysokie ryzyko, potencjalnie wysokie zwroty, większa zmienność.',
+            'growth': 'Fokus na wzrost długoterminowy, akceptacja zmienności.',
+            'income': 'Skupienie na regularnych dochodach z dywidend.'
+        };
+        
+        const helpElement = riskSelect.parentNode.querySelector('.help-text');
+        if (helpElement && helpTexts[this.value]) {
+            helpElement.textContent = helpTexts[this.value];
+        }
+    });
+});
+</script>
+{% endblock %}

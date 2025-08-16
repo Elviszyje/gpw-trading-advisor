@@ -37,6 +37,13 @@ urlpatterns = [
     path('preferences-summary/', trading_views.preferences_summary_view, name='preferences_summary'),
     path('reset-preferences/', trading_views.reset_preferences_view, name='reset_preferences'),
     
+    # Investment Preferences Management
+    path('investment-preferences/', trading_views.investment_preferences_view, name='investment_preferences'),
+    path('mode-selection/', trading_views.mode_selection_view, name='mode_selection'),
+    path('investment-summary/', trading_views.investment_summary_view, name='investment_summary'),
+    path('investment-wizard/', trading_views.investment_wizard_view, name='investment_wizard'),
+    path('reset-investment-preferences/', trading_views.reset_investment_preferences_view, name='reset_investment_preferences'),
+    
     # Trading Preferences AJAX
     path('api/calculate-position-size/', trading_views.calculate_position_size_ajax, name='calculate_position_size'),
     path('api/validate-preferences/', trading_views.validate_preferences_ajax, name='validate_preferences'),

@@ -1,0 +1,597 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Kreator Inwestycyjny - GPW2 Trading Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .wizard-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+    }
+    
+    .wizard-content {
+        padding: 40px;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 40px;
+    }
+    
+    .step {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 10px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    
+    .step.active {
+        background: #007bff;
+        color: white;
+    }
+    
+    .step.completed {
+        background: #28a745;
+        color: white;
+    }
+    
+    .wizard-step {
+        display: none;
+    }
+    
+    .wizard-step.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .question-card {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .question-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+    
+    .question-description {
+        color: #6c757d;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    
+    .option-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    
+    .option-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .option-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+    }
+    
+    .option-card.selected {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #f8f9fa 100%);
+    }
+    
+    .option-icon {
+        font-size: 2rem;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    
+    .option-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+    
+    .option-description {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .wizard-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid #e9ecef;
+    }
+    
+    .btn-wizard {
+        padding: 12px 30px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-wizard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .progress-bar-container {
+        background: #e9ecef;
+        height: 6px;
+        border-radius: 3px;
+        margin-bottom: 30px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        background: linear-gradient(90deg, #007bff 0%, #28a745 100%);
+        height: 100%;
+        transition: width 0.5s ease;
+        border-radius: 3px;
+    }
+    
+    .final-summary {
+        background: #e8f5e8;
+        border: 2px solid #28a745;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #28a745;
+    }
+    
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+    
+    .summary-label {
+        font-weight: 500;
+        color: #155724;
+    }
+    
+    .summary-value {
+        font-weight: 600;
+        color: #0f4419;
+    }
+    
+    @media (max-width: 768px) {
+        .wizard-content {
+            padding: 30px 20px;
+        }
+        
+        .option-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .wizard-navigation {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="wizard-container">
+        <!-- Header -->
+        <div class="wizard-header">
+            <h1 class="mb-3">
+                <i class="fas fa-magic me-3"></i>
+                Kreator Inwestycyjny
+            </h1>
+            <p class="mb-0 fs-5">
+                Skonfigurujemy Twój profil inwestycyjny w kilku prostych krokach
+            </p>
+        </div>
+        
+        <div class="wizard-content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 25%"></div>
+            </div>
+            
+            <!-- Step Indicator -->
+            <div class="step-indicator">
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+                <div class="step" id="step4">4</div>
+            </div>
+            
+            <form method="post" id="wizardForm">
+                {% csrf_token %}
+                
+                <!-- Step 1: Investment Horizon -->
+                <div class="wizard-step active" id="wizardStep1">
+                    <div class="question-card">
+                        <h2 class="question-title">Na jak długo planujesz inwestować?</h2>
+                        <p class="question-description">
+                            Wybierz horyzont czasowy, który najlepiej odpowiada Twoim celom finansowym.
+                        </p>
+                        
+                        <div class="option-grid">
+                            <div class="option-card" data-value="6">
+                                <div class="option-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="option-title">6 miesięcy</div>
+                                <div class="option-description">Krótkoterminowe cele</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="12">
+                                <div class="option-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="option-title">1 rok</div>
+                                <div class="option-description">Średnioterminowe cele</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="24">
+                                <div class="option-icon">
+                                    <i class="fas fa-calendar"></i>
+                                </div>
+                                <div class="option-title">2 lata</div>
+                                <div class="option-description">Długoterminowe cele</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="60">
+                                <div class="option-icon">
+                                    <i class="fas fa-seedling"></i>
+                                </div>
+                                <div class="option-title">5+ lat</div>
+                                <div class="option-description">Bardzo długoterminowe</div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="investment_horizon" id="investmentHorizon">
+                    </div>
+                </div>
+                
+                <!-- Step 2: Risk Tolerance -->
+                <div class="wizard-step" id="wizardStep2">
+                    <div class="question-card">
+                        <h2 class="question-title">Jaka jest Twoja tolerancja ryzyka?</h2>
+                        <p class="question-description">
+                            Wybierz poziom ryzyka, z którym czujesz się komfortowo.
+                        </p>
+                        
+                        <div class="option-grid">
+                            <div class="option-card" data-value="conservative">
+                                <div class="option-icon text-success">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="option-title">Konserwatywny</div>
+                                <div class="option-description">Niska zmienność, stabilne zyski</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="moderate">
+                                <div class="option-icon text-warning">
+                                    <i class="fas fa-balance-scale"></i>
+                                </div>
+                                <div class="option-title">Umiarkowany</div>
+                                <div class="option-description">Zbalansowane ryzyko i zwrot</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="aggressive">
+                                <div class="option-icon text-danger">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <div class="option-title">Agresywny</div>
+                                <div class="option-description">Wysokie ryzyko, wysokie zyski</div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="risk_tolerance" id="riskTolerance">
+                    </div>
+                </div>
+                
+                <!-- Step 3: Investment Style -->
+                <div class="wizard-step" id="wizardStep3">
+                    <div class="question-card">
+                        <h2 class="question-title">Jaki styl inwestycyjny Ci odpowiada?</h2>
+                        <p class="question-description">
+                            Wybierz strategię, która najlepiej pasuje do Twoich preferencji.
+                        </p>
+                        
+                        <div class="option-grid">
+                            <div class="option-card" data-value="value">
+                                <div class="option-icon text-primary">
+                                    <i class="fas fa-gem"></i>
+                                </div>
+                                <div class="option-title">Value</div>
+                                <div class="option-description">Niedowartościowane spółki</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="growth">
+                                <div class="option-icon text-success">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="option-title">Growth</div>
+                                <div class="option-description">Wysokie tempo wzrostu</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="dividend">
+                                <div class="option-icon text-info">
+                                    <i class="fas fa-coins"></i>
+                                </div>
+                                <div class="option-title">Dividend</div>
+                                <div class="option-description">Regularny dochód z dywidend</div>
+                            </div>
+                            
+                            <div class="option-card" data-value="balanced">
+                                <div class="option-icon text-secondary">
+                                    <i class="fas fa-balance-scale-right"></i>
+                                </div>
+                                <div class="option-title">Balanced</div>
+                                <div class="option-description">Mieszanka strategii</div>
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="investment_style" id="investmentStyle">
+                    </div>
+                </div>
+                
+                <!-- Step 4: Summary -->
+                <div class="wizard-step" id="wizardStep4">
+                    <div class="question-card">
+                        <h2 class="question-title">Podsumowanie Twojego Profilu</h2>
+                        <p class="question-description">
+                            Sprawdź swoje wybory i zatwierdź ustawienia.
+                        </p>
+                        
+                        <div class="final-summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Horyzont inwestycyjny:</span>
+                                <span class="summary-value" id="summaryHorizon">-</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="summary-label">Tolerancja ryzyka:</span>
+                                <span class="summary-value" id="summaryRisk">-</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="summary-label">Styl inwestycyjny:</span>
+                                <span class="summary-value" id="summaryStyle">-</span>
+                            </div>
+                            
+                            <div class="summary-item">
+                                <span class="summary-label">Rekomendowany cel zwrotu:</span>
+                                <span class="summary-value" id="summaryReturn">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Navigation -->
+                <div class="wizard-navigation">
+                    <button type="button" class="btn btn-outline-secondary btn-wizard" id="prevBtn" style="display: none;">
+                        <i class="fas fa-arrow-left me-2"></i>Poprzedni
+                    </button>
+                    
+                    <div></div>
+                    
+                    <button type="button" class="btn btn-primary btn-wizard" id="nextBtn">
+                        Następny<i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    
+                    <button type="submit" class="btn btn-success btn-wizard" id="finishBtn" style="display: none;">
+                        <i class="fas fa-check me-2"></i>Zakończ Konfigurację
+                    </button>
+                </div>
+                
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentStep = 1;
+    const totalSteps = 4;
+    
+    const steps = {
+        1: { field: 'investment_horizon', options: null },
+        2: { field: 'risk_tolerance', options: null },
+        3: { field: 'investment_style', options: null },
+        4: { field: 'summary', options: null }
+    };
+    
+    // Initialize option handlers
+    function initializeOptions() {
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const stepElement = this.closest('.wizard-step');
+                stepElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const value = this.dataset.value;
+                const stepId = stepElement.id.replace('wizardStep', '');
+                const fieldName = steps[stepId].field;
+                
+                if (fieldName !== 'summary') {
+                    document.getElementById(fieldName.replace('_', '')).value = value;
+                    steps[stepId].options = value;
+                }
+                
+                // Auto-advance after selection
+                setTimeout(() => {
+                    if (currentStep < totalSteps) {
+                        nextStep();
+                    }
+                }, 500);
+            });
+        });
+    }
+    
+    function updateStepIndicator() {
+        for (let i = 1; i <= totalSteps; i++) {
+            const stepEl = document.getElementById(`step${i}`);
+            stepEl.classList.remove('active', 'completed');
+            
+            if (i < currentStep) {
+                stepEl.classList.add('completed');
+            } else if (i === currentStep) {
+                stepEl.classList.add('active');
+            }
+        }
+    }
+    
+    function updateProgressBar() {
+        const progress = (currentStep / totalSteps) * 100;
+        document.getElementById('progressBar').style.width = `${progress}%`;
+    }
+    
+    function showStep(step) {
+        document.querySelectorAll('.wizard-step').forEach(s => s.classList.remove('active'));
+        document.getElementById(`wizardStep${step}`).classList.add('active');
+        
+        // Update navigation buttons
+        document.getElementById('prevBtn').style.display = step > 1 ? 'block' : 'none';
+        document.getElementById('nextBtn').style.display = step < totalSteps ? 'block' : 'none';
+        document.getElementById('finishBtn').style.display = step === totalSteps ? 'block' : 'none';
+        
+        // Update summary if on last step
+        if (step === totalSteps) {
+            updateSummary();
+        }
+    }
+    
+    function updateSummary() {
+        const horizonMap = {
+            '6': '6 miesięcy',
+            '12': '1 rok',
+            '24': '2 lata',
+            '60': '5+ lat'
+        };
+        
+        const riskMap = {
+            'conservative': 'Konserwatywny',
+            'moderate': 'Umiarkowany',
+            'aggressive': 'Agresywny'
+        };
+        
+        const styleMap = {
+            'value': 'Value Investing',
+            'growth': 'Growth Investing',
+            'dividend': 'Dividend Investing',
+            'balanced': 'Balanced'
+        };
+        
+        const returnMap = {
+            'conservative': '6-8%',
+            'moderate': '8-12%',
+            'aggressive': '12-20%'
+        };
+        
+        document.getElementById('summaryHorizon').textContent = 
+            horizonMap[steps[1].options] || '-';
+        document.getElementById('summaryRisk').textContent = 
+            riskMap[steps[2].options] || '-';
+        document.getElementById('summaryStyle').textContent = 
+            styleMap[steps[3].options] || '-';
+        document.getElementById('summaryReturn').textContent = 
+            returnMap[steps[2].options] || '-';
+    }
+    
+    function nextStep() {
+        if (currentStep < totalSteps) {
+            currentStep++;
+            showStep(currentStep);
+            updateStepIndicator();
+            updateProgressBar();
+        }
+    }
+    
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+            updateStepIndicator();
+            updateProgressBar();
+        }
+    }
+    
+    // Event listeners
+    document.getElementById('nextBtn').addEventListener('click', nextStep);
+    document.getElementById('prevBtn').addEventListener('click', prevStep);
+    
+    // Form submission
+    document.getElementById('wizardForm').addEventListener('submit', function(e) {
+        // Validate all steps are completed
+        if (!steps[1].options || !steps[2].options || !steps[3].options) {
+            e.preventDefault();
+            alert('Proszę uzupełnić wszystkie kroki kreatora.');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = document.getElementById('finishBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Konfigurowanie...';
+    });
+    
+    // Initialize
+    initializeOptions();
+    updateStepIndicator();
+    updateProgressBar();
+    showStep(1);
+});
+</script>
+{% endblock %}

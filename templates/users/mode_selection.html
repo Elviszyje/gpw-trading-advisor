@@ -1,0 +1,416 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Wybór Trybu - GPW2 Trading Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mode-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    
+    .mode-card:hover {
+        border-color: #007bff;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,123,255,0.15);
+    }
+    
+    .mode-card.selected {
+        border-color: #28a745;
+        background: linear-gradient(135deg, #d4edda 0%, #f8f9fa 100%);
+    }
+    
+    .mode-icon {
+        font-size: 3rem;
+        margin-bottom: 20px;
+    }
+    
+    .mode-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #2c3e50;
+    }
+    
+    .mode-description {
+        color: #6c757d;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+    
+    .mode-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .mode-features li {
+        color: #495057;
+        margin-bottom: 8px;
+        padding-left: 20px;
+        position: relative;
+    }
+    
+    .mode-features li:before {
+        content: '✓';
+        color: #28a745;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+    }
+    
+    .current-mode-badge {
+        background: #28a745;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+    
+    .info-section {
+        background: #f8f9fa;
+        border-left: 4px solid #17a2b8;
+        padding: 20px;
+        margin: 30px 0;
+        border-radius: 5px;
+    }
+    
+    .comparison-table {
+        margin-top: 40px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .comparison-table th {
+        background: #007bff;
+        color: white;
+        text-align: center;
+        padding: 15px;
+        font-weight: 600;
+    }
+    
+    .comparison-table td {
+        padding: 12px 15px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .comparison-table tr:nth-child(even) {
+        background: #f8f9fa;
+    }
+    
+    .feature-icon {
+        color: #28a745;
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-md-10 mx-auto">
+            
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary mb-3">
+                    <i class="fas fa-exchange-alt me-3"></i>Wybór Trybu Działania
+                </h1>
+                <p class="lead text-muted">
+                    Wybierz swój główny styl inwestowania i handlu na GPW
+                </p>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" id="modeForm">
+                {% csrf_token %}
+                
+                <!-- Mode Selection Cards -->
+                <div class="row">
+                    <!-- Trading Mode -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="mode-card position-relative" data-mode="trading">
+                            {% if user.primary_mode == 'trading' %}
+                                <div class="current-mode-badge">Aktualny tryb</div>
+                            {% endif %}
+                            
+                            <div class="text-center">
+                                <div class="mode-icon text-warning">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h3 class="mode-title">Trading Dzienny</h3>
+                                <p class="mode-description">
+                                    Skupienie na krótkoterminowym handlu z szybkimi transakcjami i analizą techniczną.
+                                </p>
+                                
+                                <ul class="mode-features">
+                                    <li>Sygnały buy/sell w czasie rzeczywistym</li>
+                                    <li>Analiza techniczna intraday</li>
+                                    <li>Zarządzanie ryzykiem pozycji</li>
+                                    <li>Powiadomienia o zmianach cen</li>
+                                    <li>Śledzenie wyników dziennych</li>
+                                </ul>
+                                
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="radio" name="primary_mode" value="trading" 
+                                           id="mode_trading" {% if user.primary_mode == 'trading' %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="mode_trading">
+                                        Wybierz Trading
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Investment Mode -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="mode-card position-relative" data-mode="investing">
+                            {% if user.primary_mode == 'investing' %}
+                                <div class="current-mode-badge">Aktualny tryb</div>
+                            {% endif %}
+                            
+                            <div class="text-center">
+                                <div class="mode-icon text-success">
+                                    <i class="fas fa-seedling"></i>
+                                </div>
+                                <h3 class="mode-title">Inwestowanie Długoterminowe</h3>
+                                <p class="mode-description">
+                                    Fokus na budowanie długoterminowego portfela z analizą fundamentalną.
+                                </p>
+                                
+                                <ul class="mode-features">
+                                    <li>Rekomendacje inwestycyjne</li>
+                                    <li>Analiza fundamentalna</li>
+                                    <li>Optymalizacja portfela</li>
+                                    <li>Rebalancing strategiczny</li>
+                                    <li>Cele długoterminowe</li>
+                                </ul>
+                                
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="radio" name="primary_mode" value="investing" 
+                                           id="mode_investing" {% if user.primary_mode == 'investing' %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="mode_investing">
+                                        Wybierz Inwestowanie
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hybrid Mode -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="mode-card position-relative" data-mode="hybrid">
+                            {% if user.primary_mode == 'hybrid' %}
+                                <div class="current-mode-badge">Aktualny tryb</div>
+                            {% endif %}
+                            
+                            <div class="text-center">
+                                <div class="mode-icon text-info">
+                                    <i class="fas fa-balance-scale"></i>
+                                </div>
+                                <h3 class="mode-title">Tryb Hybrydowy</h3>
+                                <p class="mode-description">
+                                    Kombinacja obu podejść - trading plus długoterminowe inwestowanie.
+                                </p>
+                                
+                                <ul class="mode-features">
+                                    <li>Wszystkie funkcje tradingu</li>
+                                    <li>Wszystkie funkcje inwestowania</li>
+                                    <li>Oddzielne portfele</li>
+                                    <li>Zunifikowany dashboard</li>
+                                    <li>Kompleksowa analiza</li>
+                                </ul>
+                                
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="radio" name="primary_mode" value="hybrid" 
+                                           id="mode_hybrid" {% if user.primary_mode == 'hybrid' %}checked{% endif %}>
+                                    <label class="form-check-label fw-bold" for="mode_hybrid">
+                                        Wybierz Hybrydowy
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Investment Features Toggle -->
+                <div class="info-section">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5 class="mb-2">
+                                <i class="fas fa-chart-pie text-primary me-2"></i>
+                                Funkcje Inwestycyjne
+                            </h5>
+                            <p class="mb-0 text-muted">
+                                Włącz zaawansowane funkcje dla długoterminowego inwestowania, 
+                                niezależnie od wybranego trybu głównego.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="form-check form-switch d-inline-block">
+                                <input class="form-check-input" type="checkbox" name="investment_mode_enabled" 
+                                       id="investment_enabled" {% if user.investment_mode_enabled %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="investment_enabled">
+                                    Funkcje Inwestycyjne
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Comparison Table -->
+                <div class="comparison-table">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Funkcjonalność</th>
+                                <th>Trading</th>
+                                <th>Inwestowanie</th>
+                                <th>Hybrydowy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-start fw-bold">Horyzont czasowy</td>
+                                <td>Dni/tygodnie</td>
+                                <td>Miesiące/lata</td>
+                                <td>Oba</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold">Analiza techniczna</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                                <td><i class="fas fa-times text-muted"></i>Opcjonalna</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold">Analiza fundamentalna</td>
+                                <td><i class="fas fa-times text-muted"></i>Opcjonalna</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold">Optymalizacja portfela</td>
+                                <td><i class="fas fa-times text-muted"></i>Nie</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                                <td><i class="fas fa-check feature-icon"></i>Tak</td>
+                            </tr>
+                            <tr>
+                                <td class="text-start fw-bold">Powiadomienia</td>
+                                <td>Sygnały real-time</td>
+                                <td>Rekomendacje</td>
+                                <td>Oba typy</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="text-center mt-5">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-save me-2"></i>Zapisz Ustawienia
+                    </button>
+                </div>
+                
+            </form>
+            
+            <!-- Quick Access Links -->
+            <div class="row mt-5">
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-cog text-primary me-2"></i>Preferencje Trading</h5>
+                            <p class="text-muted">Skonfiguruj parametry tradingu dziennego</p>
+                            <a href="{% url 'users:trading_preferences' %}" class="btn btn-outline-primary">
+                                Ustawienia Trading
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body text-center">
+                            <h5><i class="fas fa-chart-pie text-success me-2"></i>Preferencje Inwestycyjne</h5>
+                            <p class="text-muted">Ustaw cele długoterminowe i profil ryzyka</p>
+                            <a href="{% url 'users:investment_preferences' %}" class="btn btn-outline-success">
+                                Ustawienia Inwestycyjne
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle mode card selection
+    const modeCards = document.querySelectorAll('.mode-card');
+    const radioButtons = document.querySelectorAll('input[name="primary_mode"]');
+    
+    // Add click handlers to cards
+    modeCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const mode = this.dataset.mode;
+            const radio = document.getElementById(`mode_${mode}`);
+            if (radio) {
+                radio.checked = true;
+                updateCardStates();
+            }
+        });
+    });
+    
+    // Add change handlers to radio buttons
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', updateCardStates);
+    });
+    
+    function updateCardStates() {
+        modeCards.forEach(card => {
+            const mode = card.dataset.mode;
+            const radio = document.getElementById(`mode_${mode}`);
+            
+            if (radio && radio.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+    }
+    
+    // Initialize card states
+    updateCardStates();
+    
+    // Show confirmation for mode changes
+    const form = document.getElementById('modeForm');
+    form.addEventListener('submit', function(e) {
+        const selectedMode = document.querySelector('input[name="primary_mode"]:checked');
+        if (selectedMode) {
+            const modeText = selectedMode.labels[0].textContent.trim();
+            if (!confirm(`Czy na pewno chcesz zmienić tryb na: ${modeText}?`)) {
+                e.preventDefault();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

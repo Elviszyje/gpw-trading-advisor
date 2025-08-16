@@ -1,0 +1,450 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}Podsumowanie Inwestycyjne - GPW2 Trading Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+    .summary-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .summary-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .summary-content {
+        padding: 30px;
+    }
+    
+    .profile-card {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 5px 15px rgba(0,123,255,0.1);
+    }
+    
+    .profile-title {
+        color: #2c3e50;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .profile-title i {
+        margin-right: 10px;
+        color: #007bff;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .stat-label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .stat-value {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .mode-badge {
+        display: inline-block;
+        padding: 8px 15px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .mode-trading {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: #212529;
+    }
+    
+    .mode-investing {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .mode-hybrid {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+    
+    .risk-level {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .risk-conservative {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .risk-moderate {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .risk-aggressive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    .risk-growth {
+        background: #cce5ff;
+        color: #004085;
+    }
+    
+    .risk-income {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    .action-button {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border: 2px solid;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .action-button i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-primary-outline {
+        border-color: #007bff;
+        color: #007bff;
+    }
+    
+    .btn-primary-outline:hover {
+        background: #007bff;
+        color: white;
+    }
+    
+    .btn-success-outline {
+        border-color: #28a745;
+        color: #28a745;
+    }
+    
+    .btn-success-outline:hover {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-info-outline {
+        border-color: #17a2b8;
+        color: #17a2b8;
+    }
+    
+    .btn-info-outline:hover {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+        .summary-content {
+            padding: 20px;
+        }
+        
+        .action-buttons {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            
+            <div class="summary-container">
+                <!-- Header -->
+                <div class="summary-header">
+                    <h1 class="mb-3">
+                        <i class="fas fa-chart-area me-3"></i>
+                        Podsumowanie Profilu Inwestycyjnego
+                    </h1>
+                    <p class="mb-0 fs-5">
+                        Przegląd Twoich preferencji handlowych i inwestycyjnych
+                    </p>
+                </div>
+                
+                <div class="summary-content">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Current Mode -->
+                    <div class="profile-card">
+                        <h3 class="profile-title">
+                            <i class="fas fa-user-cog"></i>
+                            Aktualny Tryb
+                        </h3>
+                        
+                        <div class="text-center">
+                            <span class="mode-badge mode-{{ user.primary_mode }}">
+                                {% if user.primary_mode == 'trading' %}
+                                    <i class="fas fa-chart-line me-2"></i>Trading Dzienny
+                                {% elif user.primary_mode == 'investing' %}
+                                    <i class="fas fa-seedling me-2"></i>Inwestowanie Długoterminowe
+                                {% else %}
+                                    <i class="fas fa-balance-scale me-2"></i>Tryb Hybrydowy
+                                {% endif %}
+                            </span>
+                            
+                            <div class="mt-3">
+                                {% if user.investment_mode_enabled %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Funkcje Inwestycyjne Włączone
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-times me-1"></i>Funkcje Inwestycyjne Wyłączone
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Trading Preferences -->
+                        {% if has_trading_prefs %}
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h3 class="profile-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Preferencje Trading
+                                </h3>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Styl handlowy:</span>
+                                    <span class="stat-value">{{ trading_preferences.get_trading_style_display }}</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Cel zysku:</span>
+                                    <span class="stat-value">{{ trading_preferences.target_profit_percentage }}%</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Maks. strata:</span>
+                                    <span class="stat-value">{{ trading_preferences.max_loss_percentage }}%</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Min. pewność:</span>
+                                    <span class="stat-value">{{ trading_preferences.min_confidence_threshold }}%</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Maks. pozycja:</span>
+                                    <span class="stat-value">{{ trading_preferences.max_position_size_percentage }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <div class="empty-state">
+                                    <i class="fas fa-chart-line"></i>
+                                    <h4>Brak Preferencji Trading</h4>
+                                    <p>Skonfiguruj swoje preferencje handlowe</p>
+                                    <a href="{% url 'users:trading_preferences' %}" class="btn btn-outline-primary">
+                                        Ustaw Preferencje
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Investment Preferences -->
+                        {% if has_investment_prefs %}
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <h3 class="profile-title">
+                                    <i class="fas fa-seedling"></i>
+                                    Preferencje Inwestycyjne
+                                </h3>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Horyzont:</span>
+                                    <span class="stat-value">{{ investment_preferences.investment_horizon_months }} miesięcy</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Profil ryzyka:</span>
+                                    <span class="risk-level risk-{{ investment_preferences.risk_tolerance }}">
+                                        {{ investment_preferences.get_risk_tolerance_display }}
+                                    </span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Cel roczny:</span>
+                                    <span class="stat-value">{{ investment_preferences.target_annual_return_percentage }}%</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Styl:</span>
+                                    <span class="stat-value">{{ investment_preferences.get_investment_style_display }}</span>
+                                </div>
+                                
+                                <div class="stat-item">
+                                    <span class="stat-label">Benchmark:</span>
+                                    <span class="stat-value">{{ investment_preferences.get_benchmark_index_display }}</span>
+                                </div>
+                                
+                                {% if investment_preferences.esg_focus %}
+                                <div class="stat-item">
+                                    <span class="stat-label">ESG:</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-leaf me-1"></i>Aktywne
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="col-md-6">
+                            <div class="profile-card">
+                                <div class="empty-state">
+                                    <i class="fas fa-seedling"></i>
+                                    <h4>Brak Preferencji Inwestycyjnych</h4>
+                                    <p>Skonfiguruj swój profil inwestycyjny</p>
+                                    <a href="{% url 'users:investment_preferences' %}" class="btn btn-outline-success">
+                                        Ustaw Preferencje
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <a href="{% url 'users:mode_selection' %}" class="action-button btn-primary-outline">
+                            <i class="fas fa-exchange-alt"></i>
+                            Zmień Tryb
+                        </a>
+                        
+                        <a href="{% url 'users:trading_preferences' %}" class="action-button btn-primary-outline">
+                            <i class="fas fa-chart-line"></i>
+                            Preferencje Trading
+                        </a>
+                        
+                        <a href="{% url 'users:investment_preferences' %}" class="action-button btn-success-outline">
+                            <i class="fas fa-seedling"></i>
+                            Preferencje Inwestycyjne
+                        </a>
+                        
+                        <a href="{% url 'users:investment_wizard' %}" class="action-button btn-info-outline">
+                            <i class="fas fa-magic"></i>
+                            Kreator Inwestycyjny
+                        </a>
+                        
+                        <a href="{% url 'analysis:dashboard' %}" class="action-button btn-info-outline">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard Analiz
+                        </a>
+                        
+                        <a href="{% url 'dashboard:index' %}" class="action-button btn-primary-outline">
+                            <i class="fas fa-home"></i>
+                            Dashboard Główny
+                        </a>
+                    </div>
+                    
+                    <!-- Help Section -->
+                    <div class="profile-card mt-4">
+                        <h3 class="profile-title">
+                            <i class="fas fa-question-circle"></i>
+                            Potrzebujesz Pomocy?
+                        </h3>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-book text-primary me-2"></i>Dokumentacja</h5>
+                                <p class="text-muted">
+                                    Dowiedz się więcej o różnych trybach i strategiach inwestycyjnych.
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5><i class="fas fa-users text-success me-2"></i>Wsparcie</h5>
+                                <p class="text-muted">
+                                    Skontaktuj się z naszym zespołem, jeśli masz pytania.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -217,6 +217,43 @@
                             </a>
                         </nav>
                     </div>
+
+                    <!-- Investment Section -->
+                    {% if user.investment_mode_enabled or user.primary_mode == 'investing' or user.primary_mode == 'hybrid' %}
+                    <div class="section-divider">
+                        <div class="nav-section-title">INWESTOWANIE</div>
+                        <nav class="nav flex-column">
+                            <a class="nav-link {% if '/mode-selection' in request.path %}active{% endif %}" 
+                               href="{% url 'users:mode_selection' %}">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                Wybór trybu
+                            </a>
+                            <a class="nav-link {% if '/investment-preferences' in request.path %}active{% endif %}" 
+                               href="{% url 'users:investment_preferences' %}">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Preferencje inwestycyjne
+                            </a>
+                            <a class="nav-link {% if '/investment-summary' in request.path %}active{% endif %}" 
+                               href="{% url 'users:investment_summary' %}">
+                                <i class="fas fa-chart-area me-2"></i>
+                                Podsumowanie profilu
+                            </a>
+                            <a class="nav-link {% if '/investment-wizard' in request.path %}active{% endif %}" 
+                               href="{% url 'users:investment_wizard' %}">
+                                <i class="fas fa-magic me-2"></i>
+                                Kreator inwestycyjny
+                            </a>
+                            <a class="nav-link" href="#" onclick="alert('Funkcja w przygotowaniu')">
+                                <i class="fas fa-briefcase me-2"></i>
+                                Portfel
+                            </a>
+                            <a class="nav-link" href="#" onclick="alert('Funkcja w przygotowaniu')">
+                                <i class="fas fa-balance-scale me-2"></i>
+                                Rebalancing
+                            </a>
+                        </nav>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
             {% endif %}

@@ -99,6 +99,22 @@ class User(AbstractUser):
     login_count = models.IntegerField(default=0)
     last_dashboard_access = models.DateTimeField(null=True, blank=True)
     
+    # Investment vs Trading Mode
+    investment_mode_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable long-term investment features"
+    )
+    primary_mode = models.CharField(
+        max_length=20,
+        choices=[
+            ('trading', 'Daily Trading'),
+            ('investing', 'Long-term Investing'), 
+            ('hybrid', 'Both Trading & Investing')
+        ],
+        default='trading',
+        help_text="Primary user mode"
+    )
+    
     # Profile completion
     profile_completed = models.BooleanField(
         default=False,
@@ -977,3 +993,332 @@ class UserStockWatchlist(SoftDeleteModel):
         verbose_name_plural = 'Stock Watchlists'
         unique_together = ['user', 'stock']
         ordering = ['added_at']
+
+
+class UserInvestmentPreferences(SoftDeleteModel):
+    """
+    User's long-term investment preferences and goals.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='investment_preferences'
+    )
+    
+    # Investment Horizon
+    investment_horizon_months = models.IntegerField(
+        default=12,
+        validators=[MinValueValidator(3), MaxValueValidator(120)],
+        help_text="Investment horizon in months (3 months - 10 years)"
+    )
+    
+    # Risk Profile
+    risk_tolerance = models.CharField(
+        max_length=20,
+        choices=[
+            ('conservative', 'Conservative - Low risk, steady growth'),
+            ('moderate', 'Moderate - Balanced risk/return'),
+            ('aggressive', 'Aggressive - Higher risk, higher returns'),
+            ('growth', 'Growth Focused - Long-term growth'),
+            ('income', 'Income Focused - Dividend income')
+        ],
+        default='moderate',
+        help_text="Investment risk tolerance"
+    )
+    
+    # Financial Goals
+    target_annual_return_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('8.0'),
+        validators=[MinValueValidator(Decimal('2.0')), MaxValueValidator(Decimal('30.0'))],
+        help_text="Target annual return percentage (2% - 30%)"
+    )
+    
+    max_drawdown_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('15.0'),
+        validators=[MinValueValidator(Decimal('5.0')), MaxValueValidator(Decimal('50.0'))],
+        help_text="Maximum acceptable portfolio drawdown (5% - 50%)"
+    )
+    
+    # Portfolio Construction
+    max_single_stock_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('10.0'),
+        validators=[MinValueValidator(Decimal('2.0')), MaxValueValidator(Decimal('50.0'))],
+        help_text="Maximum allocation to single stock (2% - 50%)"
+    )
+    
+    min_portfolio_stocks = models.IntegerField(
+        default=10,
+        validators=[MinValueValidator(5), MaxValueValidator(100)],
+        help_text="Minimum number of stocks in portfolio"
+    )
+    
+    max_portfolio_stocks = models.IntegerField(
+        default=30,
+        validators=[MinValueValidator(10), MaxValueValidator(200)],
+        help_text="Maximum number of stocks in portfolio"
+    )
+    
+    # Sector Diversification
+    max_sector_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('25.0'),
+        validators=[MinValueValidator(Decimal('10.0')), MaxValueValidator(Decimal('100.0'))],
+        help_text="Maximum allocation to single sector"
+    )
+    
+    preferred_sectors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of preferred sectors for investment"
+    )
+    
+    excluded_sectors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of sectors to exclude from portfolio"
+    )
+    
+    # Investment Style
+    investment_style = models.CharField(
+        max_length=20,
+        choices=[
+            ('value', 'Value Investing - Undervalued stocks'),
+            ('growth', 'Growth Investing - High growth potential'),
+            ('dividend', 'Dividend Investing - Dividend-paying stocks'),
+            ('momentum', 'Momentum Investing - Trending stocks'),
+            ('quality', 'Quality Investing - High-quality companies'),
+            ('balanced', 'Balanced - Mix of styles')
+        ],
+        default='balanced',
+        help_text="Preferred investment style"
+    )
+    
+    # Company Size Preference
+    market_cap_preference = models.CharField(
+        max_length=15,
+        choices=[
+            ('large_cap', 'Large Cap - Established companies'),
+            ('mid_cap', 'Mid Cap - Medium-sized companies'),
+            ('small_cap', 'Small Cap - Smaller companies'),
+            ('mixed', 'Mixed - All sizes')
+        ],
+        default='mixed',
+        help_text="Preferred company size"
+    )
+    
+    # ESG (Environmental, Social, Governance) Preferences
+    esg_focus = models.BooleanField(
+        default=False,
+        help_text="Focus on ESG-compliant investments"
+    )
+    
+    exclude_tobacco = models.BooleanField(
+        default=False,
+        help_text="Exclude tobacco companies"
+    )
+    
+    exclude_gambling = models.BooleanField(
+        default=False,
+        help_text="Exclude gambling companies"
+    )
+    
+    exclude_alcohol = models.BooleanField(
+        default=False,
+        help_text="Exclude alcohol companies"
+    )
+    
+    exclude_weapons = models.BooleanField(
+        default=False,
+        help_text="Exclude weapons manufacturers"
+    )
+    
+    # Dividend Preferences
+    dividend_preference = models.CharField(
+        max_length=15,
+        choices=[
+            ('no_preference', 'No Preference'),
+            ('dividend_growth', 'Dividend Growth'),
+            ('high_yield', 'High Dividend Yield'),
+            ('dividend_focus', 'Dividend Focused Portfolio')
+        ],
+        default='no_preference',
+        help_text="Dividend investment preference"
+    )
+    
+    min_dividend_yield = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.0'),
+        validators=[MinValueValidator(Decimal('0.0')), MaxValueValidator(Decimal('15.0'))],
+        help_text="Minimum dividend yield requirement (%)"
+    )
+    
+    # Rebalancing Preferences
+    rebalancing_frequency = models.CharField(
+        max_length=15,
+        choices=[
+            ('monthly', 'Monthly'),
+            ('quarterly', 'Quarterly'),
+            ('semi_annual', 'Semi-Annual'),
+            ('annual', 'Annual'),
+            ('threshold_based', 'When threshold exceeded')
+        ],
+        default='quarterly',
+        help_text="Portfolio rebalancing frequency"
+    )
+    
+    rebalancing_threshold = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('5.0'),
+        validators=[MinValueValidator(Decimal('2.0')), MaxValueValidator(Decimal('20.0'))],
+        help_text="Rebalancing threshold percentage"
+    )
+    
+    # Cash Management
+    target_cash_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('5.0'),
+        validators=[MinValueValidator(Decimal('0.0')), MaxValueValidator(Decimal('50.0'))],
+        help_text="Target cash allocation percentage"
+    )
+    
+    # Analysis Preferences
+    use_fundamental_analysis = models.BooleanField(
+        default=True,
+        help_text="Use fundamental analysis for investment decisions"
+    )
+    
+    use_technical_analysis = models.BooleanField(
+        default=False,
+        help_text="Use technical analysis for investment timing"
+    )
+    
+    use_quantitative_analysis = models.BooleanField(
+        default=False,
+        help_text="Use quantitative models for stock selection"
+    )
+    
+    # Performance Tracking
+    benchmark_index = models.CharField(
+        max_length=20,
+        choices=[
+            ('wig20', 'WIG20 - Top 20 Polish stocks'),
+            ('wig', 'WIG - Broad Polish market'),
+            ('mwig40', 'mWIG40 - Mid-cap Polish stocks'),
+            ('swig80', 'sWIG80 - Small-cap Polish stocks'),
+            ('custom', 'Custom benchmark')
+        ],
+        default='wig20',
+        help_text="Benchmark for performance comparison"
+    )
+    
+    auto_invest_enabled = models.BooleanField(
+        default=False,
+        help_text="Enable automatic investment suggestions"
+    )
+    
+    def __str__(self) -> str:
+        return f"Investment preferences for {self.user.username}"
+    
+    def get_risk_score(self) -> float:
+        """Calculate risk score based on preferences (0.0 - 1.0)."""
+        risk_scores = {
+            'conservative': 0.2,
+            'moderate': 0.5,
+            'aggressive': 0.8,
+            'growth': 0.7,
+            'income': 0.3
+        }
+        return risk_scores.get(self.risk_tolerance, 0.5)
+    
+    def get_expected_volatility(self) -> float:
+        """Get expected portfolio volatility based on risk tolerance."""
+        volatility_map = {
+            'conservative': 8.0,  # Low volatility
+            'moderate': 12.0,     # Moderate volatility
+            'aggressive': 18.0,   # High volatility
+            'growth': 15.0,       # Growth-focused volatility
+            'income': 6.0         # Low volatility for income focus
+        }
+        return volatility_map.get(self.risk_tolerance, 12.0)
+    
+    def should_include_stock(self, stock_data: Dict[str, Any]) -> bool:
+        """Check if stock meets investment criteria."""
+        # Market cap filter
+        market_cap = stock_data.get('market_cap_millions', 0)
+        
+        if self.market_cap_preference == 'large_cap' and market_cap < 1000:
+            return False
+        elif self.market_cap_preference == 'mid_cap' and (market_cap < 100 or market_cap > 1000):
+            return False
+        elif self.market_cap_preference == 'small_cap' and market_cap > 100:
+            return False
+        
+        # Sector filters
+        sector = stock_data.get('sector', '')
+        if sector in self.excluded_sectors:
+            return False
+        
+        # ESG filters
+        if self.exclude_tobacco and 'tobacco' in stock_data.get('business_description', '').lower():
+            return False
+        if self.exclude_gambling and 'gambling' in stock_data.get('business_description', '').lower():
+            return False
+        if self.exclude_alcohol and 'alcohol' in stock_data.get('business_description', '').lower():
+            return False
+        if self.exclude_weapons and 'weapons' in stock_data.get('business_description', '').lower():
+            return False
+        
+        # Dividend filter
+        dividend_yield = stock_data.get('dividend_yield', 0.0)
+        if dividend_yield < float(self.min_dividend_yield):
+            return False
+        
+        return True
+    
+    def get_target_allocation(self, total_stocks: int) -> Dict[str, float]:
+        """Calculate target allocation percentages."""
+        cash_pct = float(self.target_cash_percentage)
+        equity_pct = 100.0 - cash_pct
+        
+        # Equal weight allocation with max position limits
+        equal_weight = equity_pct / total_stocks
+        max_position = float(self.max_single_stock_percentage)
+        
+        per_stock_allocation = min(equal_weight, max_position)
+        
+        return {
+            'cash_percentage': cash_pct,
+            'per_stock_percentage': per_stock_allocation,
+            'total_equity_percentage': equity_pct
+        }
+    
+    @classmethod
+    def get_default_preferences(cls, user: User) -> 'UserInvestmentPreferences':
+        """Get or create default investment preferences for user."""
+        preferences, created = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                'investment_horizon_months': 12,
+                'risk_tolerance': 'moderate',
+                'target_annual_return_percentage': Decimal('8.0'),
+                'max_drawdown_percentage': Decimal('15.0'),
+                'investment_style': 'balanced',
+                'market_cap_preference': 'mixed',
+            }
+        )
+        return preferences
+    
+    class Meta(SoftDeleteModel.Meta):
+        db_table = 'users_investment_preferences'
+        verbose_name = 'Investment Preferences'
+        verbose_name_plural = 'Investment Preferences'

@@ -1137,3 +1137,526 @@ class TimeWeightConfiguration(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.trading_style})"
+
+
+class InvestmentRecommendation(SoftDeleteModel):
+    """
+    Long-term investment recommendations based on fundamental and technical analysis.
+    """
+    RECOMMENDATION_TYPES = [
+        ('strong_buy', 'Strong Buy'),
+        ('buy', 'Buy'),
+        ('hold', 'Hold'),
+        ('sell', 'Sell'),
+        ('avoid', 'Avoid')
+    ]
+    
+    ANALYSIS_TYPES = [
+        ('fundamental', 'Fundamental Analysis'),
+        ('technical', 'Technical Analysis'),
+        ('quantitative', 'Quantitative Analysis'),
+        ('mixed', 'Mixed Analysis')
+    ]
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='investment_recommendations'
+    )
+    
+    stock = models.ForeignKey(
+        StockSymbol,
+        on_delete=models.CASCADE,
+        related_name='investment_recommendations'
+    )
+    
+    recommendation_type = models.CharField(
+        max_length=15,
+        choices=RECOMMENDATION_TYPES,
+        help_text="Investment recommendation"
+    )
+    
+    analysis_type = models.CharField(
+        max_length=15,
+        choices=ANALYSIS_TYPES,
+        default='mixed',
+        help_text="Type of analysis performed"
+    )
+    
+    # Price Targets
+    current_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        help_text="Current stock price at recommendation time"
+    )
+    
+    target_price_6m = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="6-month price target"
+    )
+    
+    target_price_12m = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="12-month price target"
+    )
+    
+    target_price_24m = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="24-month price target"
+    )
+    
+    # Confidence and Risk
+    confidence_score = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)],
+        help_text="Recommendation confidence (0-100%)"
+    )
+    
+    risk_score = models.FloatField(
+        validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
+        help_text="Investment risk score (0-10)"
+    )
+    
+    volatility_estimate = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Expected annual volatility (%)"
+    )
+    
+    # Fundamental Analysis Data
+    pe_ratio = models.FloatField(null=True, blank=True)
+    peg_ratio = models.FloatField(null=True, blank=True)
+    price_to_book = models.FloatField(null=True, blank=True)
+    debt_to_equity = models.FloatField(null=True, blank=True)
+    roe = models.FloatField(null=True, blank=True, help_text="Return on Equity")
+    revenue_growth_1y = models.FloatField(null=True, blank=True)
+    earnings_growth_1y = models.FloatField(null=True, blank=True)
+    
+    # Dividend Analysis
+    dividend_yield = models.FloatField(null=True, blank=True)
+    dividend_growth_rate = models.FloatField(null=True, blank=True)
+    payout_ratio = models.FloatField(null=True, blank=True)
+    
+    # Technical Analysis
+    trend_direction = models.CharField(
+        max_length=10,
+        choices=[
+            ('bullish', 'Bullish'),
+            ('bearish', 'Bearish'),
+            ('neutral', 'Neutral')
+        ],
+        null=True,
+        blank=True
+    )
+    
+    support_level = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Key support level"
+    )
+    
+    resistance_level = models.DecimalField(
+        max_digits=10,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Key resistance level"
+    )
+    
+    # Detailed Analysis
+    fundamental_analysis = models.JSONField(
+        default=dict,
+        help_text="Detailed fundamental analysis data"
+    )
+    
+    technical_analysis = models.JSONField(
+        default=dict,
+        help_text="Detailed technical analysis data"
+    )
+    
+    risk_factors = models.JSONField(
+        default=list,
+        help_text="List of key risk factors"
+    )
+    
+    investment_thesis = models.TextField(
+        help_text="Investment thesis and reasoning"
+    )
+    
+    # Recommendation Metadata
+    analyst_notes = models.TextField(blank=True)
+    investment_horizon_months = models.IntegerField(
+        default=12,
+        help_text="Recommended investment horizon in months"
+    )
+    
+    # Performance Tracking
+    is_active = models.BooleanField(default=True)
+    recommendation_date = models.DateField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    def __str__(self) -> str:
+        return f"{self.stock.symbol} - {self.recommendation_type.upper()} - {self.recommendation_date}"
+    
+    @property
+    def expected_return_6m(self) -> Optional[Decimal]:
+        """Calculate expected 6-month return."""
+        if not self.target_price_6m:
+            return None
+        return ((self.target_price_6m - self.current_price) / self.current_price) * 100
+    
+    @property
+    def expected_return_12m(self) -> Optional[Decimal]:
+        """Calculate expected 12-month return."""
+        if not self.target_price_12m:
+            return None
+        return ((self.target_price_12m - self.current_price) / self.current_price) * 100
+    
+    @property
+    def expected_return_24m(self) -> Optional[Decimal]:
+        """Calculate expected 24-month return."""
+        if not self.target_price_24m:
+            return None
+        return ((self.target_price_24m - self.current_price) / self.current_price) * 100
+    
+    @property
+    def is_buy_recommendation(self) -> bool:
+        """Check if recommendation is buy or strong buy."""
+        return self.recommendation_type in ['buy', 'strong_buy']
+    
+    @property
+    def risk_adjusted_score(self) -> float:
+        """Calculate risk-adjusted recommendation score."""
+        if self.risk_score == 0:
+            return 0.0
+        return self.confidence_score / self.risk_score
+    
+    def update_price_targets(self, target_6m=None, target_12m=None, target_24m=None):
+        """Update price targets and save."""
+        if target_6m is not None:
+            self.target_price_6m = target_6m
+        if target_12m is not None:
+            self.target_price_12m = target_12m
+        if target_24m is not None:
+            self.target_price_24m = target_24m
+        self.save()
+    
+    class Meta(SoftDeleteModel.Meta):
+        db_table = 'analysis_investment_recommendation'
+        verbose_name = 'Investment Recommendation'
+        verbose_name_plural = 'Investment Recommendations'
+        ordering = ['-recommendation_date']
+        indexes = [
+            models.Index(fields=['user', 'recommendation_type', 'recommendation_date']),
+            models.Index(fields=['stock', 'recommendation_type', 'is_active']),
+            models.Index(fields=['confidence_score', 'risk_score']),
+        ]
+
+
+class PortfolioAnalysis(SoftDeleteModel):
+    """
+    Comprehensive portfolio analysis and optimization recommendations.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='portfolio_analyses'
+    )
+    
+    analysis_date = models.DateField(auto_now_add=True)
+    
+    # Portfolio Overview
+    total_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Total portfolio value in PLN"
+    )
+    
+    cash_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Cash holdings in PLN"
+    )
+    
+    invested_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text="Amount invested in stocks"
+    )
+    
+    number_of_positions = models.IntegerField(
+        help_text="Number of stock positions"
+    )
+    
+    # Asset Allocation
+    stock_allocations = models.JSONField(
+        default=dict,
+        help_text="Stock allocations: {symbol: {shares, value, percentage}}"
+    )
+    
+    sector_allocations = models.JSONField(
+        default=dict,
+        help_text="Sector allocations: {sector: percentage}"
+    )
+    
+    market_cap_allocations = models.JSONField(
+        default=dict,
+        help_text="Market cap allocations: {large/mid/small: percentage}"
+    )
+    
+    # Performance Metrics
+    portfolio_return_1m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="1-month portfolio return (%)"
+    )
+    
+    portfolio_return_3m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="3-month portfolio return (%)"
+    )
+    
+    portfolio_return_6m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="6-month portfolio return (%)"
+    )
+    
+    portfolio_return_12m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="12-month portfolio return (%)"
+    )
+    
+    portfolio_return_ytd = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Year-to-date return (%)"
+    )
+    
+    # Risk Metrics
+    portfolio_volatility = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Portfolio volatility (annualized %)"
+    )
+    
+    portfolio_beta = models.DecimalField(
+        max_digits=6,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Portfolio beta vs benchmark"
+    )
+    
+    sharpe_ratio = models.DecimalField(
+        max_digits=6,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Sharpe ratio"
+    )
+    
+    max_drawdown = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Maximum drawdown (%)"
+    )
+    
+    var_95 = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Value at Risk 95% confidence"
+    )
+    
+    # Diversification Metrics
+    diversification_score = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
+        help_text="Diversification score (0-10)"
+    )
+    
+    concentration_risk = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Concentration risk score"
+    )
+    
+    correlation_score = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Average correlation between holdings"
+    )
+    
+    # Benchmark Comparison
+    benchmark_symbol = models.CharField(
+        max_length=10,
+        default='WIG20',
+        help_text="Benchmark index symbol"
+    )
+    
+    benchmark_return_1m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Benchmark 1-month return (%)"
+    )
+    
+    benchmark_return_12m = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Benchmark 12-month return (%)"
+    )
+    
+    alpha = models.DecimalField(
+        max_digits=8,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Portfolio alpha vs benchmark"
+    )
+    
+    # Recommendations
+    rebalancing_needed = models.BooleanField(
+        default=False,
+        help_text="Portfolio needs rebalancing"
+    )
+    
+    rebalancing_suggestions = models.JSONField(
+        default=list,
+        help_text="Specific rebalancing recommendations"
+    )
+    
+    new_positions_suggested = models.JSONField(
+        default=list,
+        help_text="Suggested new positions to add"
+    )
+    
+    positions_to_reduce = models.JSONField(
+        default=list,
+        help_text="Positions to reduce or close"
+    )
+    
+    risk_alerts = models.JSONField(
+        default=list,
+        help_text="Risk-related alerts and warnings"
+    )
+    
+    # Analysis Summary
+    overall_score = models.FloatField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0.0), MaxValueValidator(10.0)],
+        help_text="Overall portfolio score (0-10)"
+    )
+    
+    analysis_summary = models.TextField(
+        help_text="Human-readable analysis summary"
+    )
+    
+    key_insights = models.JSONField(
+        default=list,
+        help_text="Key portfolio insights and recommendations"
+    )
+    
+    def __str__(self) -> str:
+        return f"Portfolio Analysis - {self.user.username} - {self.analysis_date}"
+    
+    @property
+    def cash_percentage(self) -> float:
+        """Calculate cash percentage of total portfolio."""
+        if self.total_value == 0:
+            return 0.0
+        return (float(self.cash_amount) / float(self.total_value)) * 100
+    
+    @property
+    def invested_percentage(self) -> float:
+        """Calculate invested percentage of total portfolio."""
+        if self.total_value == 0:
+            return 0.0
+        return (float(self.invested_amount) / float(self.total_value)) * 100
+    
+    @property
+    def is_well_diversified(self) -> bool:
+        """Check if portfolio is well diversified."""
+        return (
+            self.diversification_score is not None and 
+            self.diversification_score >= 7.0 and
+            self.number_of_positions >= 10
+        )
+    
+    @property
+    def performance_vs_benchmark(self) -> Optional[Decimal]:
+        """Calculate performance vs benchmark (12-month)."""
+        if not self.portfolio_return_12m or not self.benchmark_return_12m:
+            return None
+        return self.portfolio_return_12m - self.benchmark_return_12m
+    
+    def add_insight(self, insight: str) -> None:
+        """Add a key insight to the analysis."""
+        if not isinstance(self.key_insights, list):
+            self.key_insights = []
+        self.key_insights.append({
+            'insight': insight,
+            'timestamp': timezone.now().isoformat()
+        })
+        self.save(update_fields=['key_insights'])
+    
+    def add_rebalancing_suggestion(self, action: str, stock_symbol: str, 
+                                   current_weight: float, target_weight: float) -> None:
+        """Add a rebalancing suggestion."""
+        if not isinstance(self.rebalancing_suggestions, list):
+            self.rebalancing_suggestions = []
+        
+        suggestion = {
+            'action': action,  # 'buy', 'sell', 'rebalance'
+            'stock_symbol': stock_symbol,
+            'current_weight': current_weight,
+            'target_weight': target_weight,
+            'difference': target_weight - current_weight
+        }
+        
+        self.rebalancing_suggestions.append(suggestion)
+        self.save(update_fields=['rebalancing_suggestions'])
+    
+    class Meta(SoftDeleteModel.Meta):
+        db_table = 'analysis_portfolio_analysis'
+        verbose_name = 'Portfolio Analysis'
+        verbose_name_plural = 'Portfolio Analyses'
+        ordering = ['-analysis_date']
+        indexes = [
+            models.Index(fields=['user', 'analysis_date']),
+            models.Index(fields=['overall_score', 'analysis_date']),
+        ]
